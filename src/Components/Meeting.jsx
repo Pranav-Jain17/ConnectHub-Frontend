@@ -145,9 +145,16 @@ export default function Meeting() {
 
         const handleMeetingEnded = () => {
             if (isExitingRef.current) return;
+            isExitingRef.current = true;
+            
+            // Stop all local tracks immediately
+            if (localStreamRef.current) {
+                localStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+            
             clearMeetingStorage();
             toast.info("Meeting ended by host");
-            navigate("/home");
+            navigate("/home", { replace: true });
         };
 
         const handleUserLeft = ({ userId: leaverId }) => {
@@ -272,10 +279,24 @@ export default function Meeting() {
 
     const endMeeting = async () => {
         isExitingRef.current = true;
+        
+        // 1. Stop local media immediately
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+
+        const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
+
+        // 2. Clear UI/Storage immediately (Instant redirection)
+        clearMeetingStorage();
+        toast.info("Ending meeting...");
+        navigate("/home", { replace: true });
+
+        // 3. Perform the background cleanup on the server
         try {
             const res = await fetch(
-                `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/end`,
+                `https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/end`,
                 {
                     method: "DELETE",
                     headers: {
@@ -285,17 +306,18 @@ export default function Meeting() {
                 }
             );
 
-            if (res.ok) {
-                clearMeetingStorage();
-                toast.info("Meeting ended by host");
-                navigate("/home", { replace: true });
-            } else {
-                toast.error("Failed to end meeting");
-                isExitingRef.current = false;
+            if (!res.ok) {
+                // If ending failed (e.g. not host), at least try to leave
+                fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/leave`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                    },
+                }).catch(() => {});
             }
         } catch (err) {
-            toast.error("Error ending meeting");
-            navigate("/home", { replace: true });
+            console.error("Error ending meeting in background:", err);
         }
     };
 
