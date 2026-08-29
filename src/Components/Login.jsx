@@ -67,10 +67,11 @@ function Login() {
             const data = await response.json();
             const loginToken = data.token;
 
-            if (!rememberMe) {
+            if (rememberMe) {
+                localStorage.setItem('loginToken', loginToken);
+            } else {
                 sessionStorage.setItem('loginToken', loginToken);
             }
-            localStorage.setItem('loginToken', loginToken);
             localStorage.setItem('userId', data.userId);
             localStorage.setItem('userName', data.username);
             localStorage.setItem('userEmail', data.email);
