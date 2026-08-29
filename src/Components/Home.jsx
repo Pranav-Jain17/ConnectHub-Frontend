@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './home.css';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 function Home({ userId }) {
     const navigate = useNavigate();
@@ -15,7 +16,7 @@ function Home({ userId }) {
         };
 
         // const response = await fetch('https://connecthub-2.onrender.com/meetings', {
-        const response = await fetch('https://trickish-urijah-pachydermatously.ngrok-free.dev/meetings', {
+        const response = await fetch('http://3.110.101.93:3000/meetings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -57,7 +58,7 @@ function Home({ userId }) {
     const joinMeeting = async (userId, roomId, loginToken) => {
         const response = await fetch(
             // https://connecthub-2.onrender.com/meetings/${userId}/join,
-            `https://trickish-urijah-pachydermatously.ngrok-free.dev/meetings/${userId}/join`,
+            `http://3.110.101.93:3000/meetings/${userId}/join`,
             {
                 method: 'POST',
                 headers: {
@@ -93,17 +94,82 @@ function Home({ userId }) {
             return;
         }
 
+        // ✅ store roomId for Meeting screen
+        localStorage.setItem("roomId", roomId);
+
         try {
-            await joinMeeting(userId, roomId, loginToken);
+            const data = await joinMeeting(userId, roomId, loginToken);
             alert("Joined meet successfully!");
+
+            // ✅ if backend returns a title, use it; else fallback
+            if (data && data.title) {
+                localStorage.setItem("meetTitle", data.title);
+            } else {
+                localStorage.setItem("meetTitle", `Meeting ${roomId}`);
+            }
+
             navigate("/meeting");
         } catch (err) {
             alert(`Error joining meet: ${err.message}`);
         }
     };
 
+    const logoutUser = async (loginToken) => {
+        const response = await fetch('http://3.110.101.93:3000/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${loginToken}`
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.message || `Status: ${response.status}`);
+        }
+
+        return response.json();
+    };
+
+    const handleLogout = async () => {
+        const loginToken = localStorage.getItem("loginToken");
+
+        try {
+            if (loginToken) {
+                await logoutUser(loginToken);
+            }
+        } catch (err) {
+            console.error("Error while logging out:", err.message);
+        } finally {
+            localStorage.removeItem("loginToken");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("roomId");
+            localStorage.removeItem("meetTitle");
+
+            toast.success("Logged out successfully");
+            navigate("/login");          // Redirect to Login Page
+        }
+    };
+
     return (
         <div className="home-page">
+
+            <div className="top-nav">
+                <div className="nav-left">
+                    <p className="app-logo">ConnectHub</p>
+                </div>
+
+                <div className="nav-right">
+                    <button className="btn-logout" onClick={handleLogout}>
+                        Logout
+                    </button>
+                    <div className="profile-icon">
+                        <img src="/assets/svg/profile.svg" alt="Profile" />
+                    </div>
+                </div>
+            </div>
+
             <div className="home-container">
                 <div className="home-left">
                     <h1>Welcome to ConnectHub</h1>

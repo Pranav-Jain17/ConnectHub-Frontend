@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./login.css";
+import { toast } from "react-toastify";
 
 function Login() {
     const [identifier, setIdentifier] = useState('');
@@ -24,7 +25,7 @@ function Login() {
 
         try {
             // const response = await fetch('https://connecthub-2.onrender.com/auth/login', {
-            const response = await fetch('https://trickish-urijah-pachydermatously.ngrok-free.dev/auth/login', {
+            const response = await fetch('http://3.110.101.93:3000/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -45,6 +46,7 @@ function Login() {
             }
             localStorage.setItem('loginToken', loginToken);
             localStorage.setItem('userId', data.userId);
+            toast.success("Logged in successfully!");
             navigate('/home');
         } catch (err) {
             setError('! Enter a valid email/username or password');

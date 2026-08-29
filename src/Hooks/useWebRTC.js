@@ -82,6 +82,12 @@ export const useWebRTC = (socket, roomId, userId) => {
 
             // Add local stream tracks to pc
             if (localStreamRef.current) {
+                console.log(
+                    'ℹ️ Adding local tracks to PC for',
+                    remoteUserId,
+                    'tracks:',
+                    localStreamRef.current.getTracks().map(t => t.kind)
+                );
                 localStreamRef.current.getTracks().forEach((track) => {
                     try {
                         pc.addTrack(track, localStreamRef.current);
@@ -96,7 +102,7 @@ export const useWebRTC = (socket, roomId, userId) => {
 
             // Robust ontrack: support event.streams[] or per-track events
             pc.ontrack = (event) => {
-                console.log('📥 ontrack fired for', remoteUserId, 'track:', event.track?.kind);
+                console.log('📥 ontrack fired for', remoteUserId, 'event:', event);
                 let incomingStream = null;
 
                 if (event.streams && event.streams[0]) {
@@ -127,13 +133,22 @@ export const useWebRTC = (socket, roomId, userId) => {
 
             // Send ICE candidates to signaling server
             pc.onicecandidate = (event) => {
+                console.log('🧊 onicecandidate fired for', remoteUserId, 'event.candidate:', event.candidate);
+
                 if (event.candidate) {
-                    console.log('🧊 onicecandidate -> emitting to server for', remoteUserId);
+                    const candidateToSend =
+                        event.candidate && (typeof event.candidate.toJSON === 'function'
+                            ? event.candidate.toJSON()
+                            : event.candidate);
+
                     try {
+                        // ✅ include fromUserId so the other side knows who this candidate is from
                         socket.emit('ice-candidate', {
                             toUserId: remoteUserId,
-                            candidate: event.candidate, // candidate is RTCIceCandidateInit-like
+                            fromUserId: userId,
+                            candidate: candidateToSend,
                         });
+                        console.log('📤 Emitted ice-candidate for', remoteUserId, candidateToSend);
                     } catch (err) {
                         console.error('❌ Failed to emit ice-candidate:', err);
                     }
@@ -157,15 +172,19 @@ export const useWebRTC = (socket, roomId, userId) => {
             const pending = pendingCandidatesRef.current[remoteUserId];
             if (pending && pending.length) {
                 console.log('⏳ Draining', pending.length, 'pending ICE candidates for', remoteUserId);
-                pending.forEach(async (cand) => {
-                    try {
-                        await pc.addIceCandidate(new RTCIceCandidate(cand));
-                        console.log('✅ Added pending candidate for', remoteUserId);
-                    } catch (err) {
-                        console.error('❌ Error adding pending candidate for', remoteUserId, err);
+                (async () => {
+                    for (const cand of pending) {
+                        try {
+                            const normalized =
+                                (cand instanceof RTCIceCandidate) ? cand : new RTCIceCandidate(cand);
+                            await pc.addIceCandidate(normalized);
+                            console.log('✅ Added pending candidate for', remoteUserId, normalized);
+                        } catch (err) {
+                            console.error('❌ Error adding pending candidate for', remoteUserId, err, 'cand:', cand);
+                        }
                     }
-                });
-                delete pendingCandidatesRef.current[remoteUserId];
+                    delete pendingCandidatesRef.current[remoteUserId];
+                })();
             }
 
             return pc;
@@ -190,10 +209,8 @@ export const useWebRTC = (socket, roomId, userId) => {
             try {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-
-                // send the whole offer (type + sdp) — server will re-emit with fromUserId
                 console.log('📤 Emitting signal (offer) to server -> target:', remoteUserId);
-                socket.emit('signal', remoteUserId, offer);
+                socket.emit('signal', remoteUserId, { type: offer.type, sdp: offer.sdp });
             } catch (err) {
                 console.error('❌ Error creating/sending offer to', remoteUserId, err);
             }
@@ -216,8 +233,7 @@ export const useWebRTC = (socket, roomId, userId) => {
                 if (!pc) pc = createPeerConnection(fromUserId);
 
                 try {
-                    // data has { type, sdp }
-                    await pc.setRemoteDescription(new RTCSessionDescription(data));
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: data.type, sdp: data.sdp }));
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
 
@@ -242,29 +258,38 @@ export const useWebRTC = (socket, roomId, userId) => {
             }
         };
 
-        // Handle ICE candidate relayed from server. server emits object containing at least fromUserId and candidate.
+        // Handle ICE candidate relayed from server
         const handleIceCandidate = async (payload) => {
-            // payload might be { fromUserId, candidate } or it might include extra fields (fromSocketId etc.)
-            const { fromUserId, candidate } = payload || {};
-            console.log('🧊 ice-candidate received from', fromUserId);
+            console.log('🧊 ice-candidate payload received:', payload);
+            const { fromUserId, candidate, userId: payloadUserId, senderId } = payload || {};
+
+            // Try to resolve which remote user this candidate belongs to
+            const remoteUserId = fromUserId || payloadUserId || senderId;
+            console.log('🧊 ice-candidate resolved remoteUserId =', remoteUserId, 'candidate:', candidate);
 
             if (!candidate) {
                 console.warn('⚠️ ice-candidate payload missing candidate:', payload);
                 return;
             }
+            if (!remoteUserId) {
+                console.warn('⚠️ ice-candidate payload missing remoteUserId:', payload);
+                return;
+            }
 
-            const pc = peerConnectionsRef.current[fromUserId];
+            const pc = peerConnectionsRef.current[remoteUserId];
             if (pc) {
                 try {
-                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
-                    console.log('✅ Added ICE candidate for', fromUserId);
+                    const candidateObj =
+                        (candidate instanceof RTCIceCandidate) ? candidate : new RTCIceCandidate(candidate);
+                    await pc.addIceCandidate(candidateObj);
+                    console.log('✅ Added ICE candidate for', remoteUserId, candidateObj);
                 } catch (err) {
-                    console.error('❌ Error adding ICE candidate for', fromUserId, err);
+                    console.error('❌ Error adding ICE candidate for', remoteUserId, err, 'candidate:', candidate);
                 }
             } else {
-                console.log('⏳ No PC for', fromUserId, '- queueing candidate');
-                if (!pendingCandidatesRef.current[fromUserId]) pendingCandidatesRef.current[fromUserId] = [];
-                pendingCandidatesRef.current[fromUserId].push(candidate);
+                console.log('⏳ No PC for', remoteUserId, '- queueing candidate');
+                if (!pendingCandidatesRef.current[remoteUserId]) pendingCandidatesRef.current[remoteUserId] = [];
+                pendingCandidatesRef.current[remoteUserId].push(candidate);
             }
         };
 

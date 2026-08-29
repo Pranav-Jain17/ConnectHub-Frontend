@@ -18,7 +18,7 @@ export default function Meeting() {
     console.log('🔌 Meeting: Socket object received:', socket ? 'EXISTS ✓' : 'NULL ✗');
     console.log('🔌 Meeting: Socket connected:', socket?.connected);
 
-    // ✅ Load roomId and userId from localStorage
+    // Load roomId and userId once
     useEffect(() => {
         console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('🔧 Meeting: Load roomId useEffect running');
@@ -36,7 +36,7 @@ export default function Meeting() {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     }, []);
 
-    // ✅ Use the custom WebRTC hook
+    // WebRTC Hook
     const {
         localStream,
         localStreamReady,
@@ -45,27 +45,33 @@ export default function Meeting() {
         toggleVideo
     } = useWebRTC(socket, roomId, userId);
 
-    // ✅ Display local video when stream is ready
     useEffect(() => {
+        console.log('🎚️ localStreamReady changed:', localStreamReady);
+    }, [localStreamReady]);
+
+    // Display local video when ready
+    useEffect(() => {
+        if (!localStreamReady) {
+            console.log("⏳ Waiting for localStreamReady...");
+            return;
+        }
+
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
             console.log('✅ Local video displayed');
         }
-    }, [localStream]);
+    }, [localStreamReady, localStream]);
 
-    // ✅ Handle mic toggle
     const handleMicToggle = () => {
         const newState = toggleMic();
         setIsMicOn(newState);
     };
 
-    // ✅ Handle video toggle
     const handleVideoToggle = () => {
         const newState = toggleVideo();
         setIsVideoOn(newState);
     };
 
-    // ✅ Copy room ID to clipboard
     const copyRoomId = async () => {
         console.log('\n📋 Copy button clicked');
 
@@ -86,6 +92,7 @@ export default function Meeting() {
     console.log('   Meet Title:', meetTitle || 'NONE');
     console.log('   Room ID:', roomId || 'NONE');
     console.log('   Remote streams count:', Object.keys(remoteStreams).length);
+    console.log('   Local stream ready:', localStreamReady);
 
     return (
         <div className="layout">
@@ -125,11 +132,11 @@ export default function Meeting() {
                 </div>
 
                 <div className="toolbuttons">
-                    {/* Mic button */}
                     <button
                         className={`btn mic-btn ${!isMicOn ? 'btn-off' : ''}`}
                         onClick={handleMicToggle}
                         title={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
+                        disabled={!localStreamReady}
                     >
                         <img
                             src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
@@ -137,11 +144,11 @@ export default function Meeting() {
                         />
                     </button>
 
-                    {/* Video button */}
                     <button
                         className={`btn video-btn ${!isVideoOn ? 'btn-off' : ''}`}
                         onClick={handleVideoToggle}
                         title={isVideoOn ? 'Turn off camera' : 'Turn on camera'}
+                        disabled={!localStreamReady}
                     >
                         <img
                             src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"}
@@ -175,7 +182,6 @@ export default function Meeting() {
     );
 }
 
-// ✅ Remote Video Component
 function RemoteVideo({ stream, userId }) {
     const videoRef = useRef(null);
 

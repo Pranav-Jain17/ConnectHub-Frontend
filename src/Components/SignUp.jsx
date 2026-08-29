@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 import "./signup.css";
 
 function Signup() {
@@ -16,7 +15,7 @@ function Signup() {
         setError(null);
 
         try {
-            const response = await fetch('https://trickish-urijah-pachydermatously.ngrok-free.dev/auth/signup', {
+            const response = await fetch('http://3.110.101.93:3000/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -88,7 +87,6 @@ function Signup() {
                     </div>
                 </div>
             </div>
-            <ToastContainer position="top-right" autoClose={3000} />
         </div>
     );
 }

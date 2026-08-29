@@ -10,7 +10,7 @@ export const useSocket = () => {
 export const SocketProvider = (props) => {
     console.log('🔧 SocketProvider: Component rendering');
 
-    // ✅ Create socket with authentication token
+    // Create socket with authentication token
     const socket = useMemo(() => {
         console.log('🔧 useMemo: Creating socket instance');
         const token = localStorage.getItem('loginToken');
@@ -20,7 +20,7 @@ export const SocketProvider = (props) => {
             console.log('🔐 Token (first 20 chars):', token.substring(0, 20) + '...');
         }
 
-        const socketInstance = io('https://trickish-urijah-pachydermatously.ngrok-free.dev', {
+        const socketInstance = io('http://3.110.101.93:3000', {
             auth: {
                 token: token
             },
@@ -28,26 +28,25 @@ export const SocketProvider = (props) => {
         });
 
         console.log('✅ Socket instance created');
-        console.log('🌐 Server URL: http://localhost:3000');
+        console.log('🌐 Server URL: http://3.110.101.93:3000'); // ✅ corrected log
         console.log('🔌 Auto-connect: false');
 
         return socketInstance;
     }, []); // Create once
 
-    // ✅ Handle connection lifecycle and errors
+    // Handle connection lifecycle and errors
     useEffect(() => {
         console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('🔧 useEffect: Socket connection effect running');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-        // Only connect if token exists
         const token = localStorage.getItem('loginToken');
         console.log('🔐 Checking token in useEffect...');
         console.log('   Token exists:', !!token);
 
         if (token) {
             console.log('✅ Token found - attempting connection...');
-            console.log('   Connecting to: http://localhost:3000');
+            console.log('   Connecting to: http://3.110.101.93:3000');
 
             socket.connect();
             console.log('📡 socket.connect() called');
@@ -67,7 +66,6 @@ export const SocketProvider = (props) => {
                 console.error('   Time:', new Date().toISOString());
                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-                // Handle authentication errors
                 if (error.message === 'Authentication error: Invalid token' ||
                     error.message === 'Authentication error: No token provided') {
                     console.warn('⚠️ Invalid token detected - clearing from localStorage');
@@ -82,7 +80,6 @@ export const SocketProvider = (props) => {
                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
             });
 
-            // Log reconnection attempts
             socket.io.on('reconnect_attempt', (attempt) => {
                 console.log(`🔄 Reconnection attempt ${attempt}...`);
             });
@@ -105,7 +102,7 @@ export const SocketProvider = (props) => {
             console.warn('━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
         }
 
-        // ✅ Cleanup on unmount
+        // Cleanup on unmount
         return () => {
             console.log('\n🧹 ━━━ CLEANUP RUNNING ━━━');
             console.log('   Removing event listeners...');
