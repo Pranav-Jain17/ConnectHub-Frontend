@@ -27,7 +27,7 @@ export default function VideoGrid({
                 <div className="presentation-stage">
                     <ScreenVideo
                         stream={activeScreenShare.stream}
-                        name={`${activeScreenShare.participantName || participantNameMap[activeScreenShare.participant?.identity] || "Remote User"}'s Screen`}
+                        name={`${participantNameMap[activeScreenShare.participant?.identity] || (activeScreenShare.participantName !== 'Anonymous' && activeScreenShare.participantName) || "Remote User"}'s Screen`}
                     />
                 </div>
 
@@ -58,7 +58,7 @@ export default function VideoGrid({
                             <div className="sidebar-item" key={t.participant?.sid}>
                                 <SidebarVideo
                                     stream={t.stream}
-                                    name={t.participantName || participantNameMap[t.participant?.identity] || "Remote User"}
+                                    name={participantNameMap[t.participant?.identity] || (t.participantName !== 'Anonymous' && t.participantName) || "Remote User"}
                                     isMicOn={peerMicState[t.participant?.identity]}
                                 />
                             </div>
@@ -99,7 +99,7 @@ export default function VideoGrid({
                     key={t.participant?.sid}
                     stream={t.stream}
                     isMicOn={peerMicState[t.participant?.identity]}
-                    name={t.participantName || participantNameMap[t.participant?.identity] || "Remote User"}
+                    name={participantNameMap[t.participant?.identity] || (t.participantName !== 'Anonymous' && t.participantName) || "Remote User"}
                 />
             ))}
         </main>

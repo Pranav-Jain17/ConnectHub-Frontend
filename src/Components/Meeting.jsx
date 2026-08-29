@@ -76,12 +76,26 @@ export default function Meeting() {
 
     const participantNameMap = useMemo(() => {
         const map = {};
+        
+        // Primary source: participants from backend
         participants.forEach((p) => {
             map[p._id] = p.username || "Unknown User";
         });
+
+        // Secondary: LiveKit identity
         Object.values(remoteStreams).forEach(({ participant }) => {
-            if (participant) map[participant.identity] = participant.identity;
+            if (!participant) return;
+            const identity = participant.identity;
+            if (!map[identity]) {
+                const matched = participants.find(
+                    p => p.username === identity || p._id === identity
+                );
+                // Priority: Backend match > LiveKit Name (if not Anonymous) > Identity ID
+                const livekitName = (participant.name && participant.name !== 'Anonymous') ? participant.name : null;
+                map[identity] = matched?.username || livekitName || identity;
+            }
         });
+
         return map;
     }, [participants, remoteStreams]);
 
@@ -197,14 +211,16 @@ export default function Meeting() {
         navigate(`/report/${roomId}`, { replace: true });
     }, [roomId, socket, navigate]);
 
+    // ✅ Attach local stream to video element for ALL users (not just host)
+    useEffect(() => {
+        if (localStreamReady && localStream && localVideoRef.current) {
+            localVideoRef.current.srcObject = localStream;
+        }
+    }, [localStreamReady, localStream]);
+
     // ✅ Chunked recording — 30s intervals, upload each chunk independently
     useEffect(() => {
         if (!localStreamReady || !localStream || !isHost || !roomId) return;
-
-        // Set local video
-        if (localVideoRef.current && localStream) {
-            localVideoRef.current.srcObject = localStream;
-        }
 
         const audioTracks = localStream.getAudioTracks();
         if (audioTracks.length === 0) {
