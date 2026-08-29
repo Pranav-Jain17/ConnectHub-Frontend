@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import "./signup.css";
@@ -10,6 +10,23 @@ function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+
+    const passwordRef = useRef(null);
+    const cursorRef = useRef(null);
+
+    const handleTogglePassword = () => {
+        const input = passwordRef.current;
+        if (input) cursorRef.current = input.selectionStart;
+        setShowPassword(prev => !prev);
+    };
+
+    useLayoutEffect(() => {
+        const input = passwordRef.current;
+        if (input && cursorRef.current !== null) {
+            input.setSelectionRange(cursorRef.current, cursorRef.current);
+            input.focus();
+        }
+    }, [showPassword]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -75,7 +92,9 @@ function Signup() {
                             <label>Password</label>
                             <div className="password-input-wrapper">
                                 <input
-                                    type={showPassword ? "text" : "password"}
+                                    ref={passwordRef}
+                                    className={showPassword ? "unmasked-password" : "masked-password"}
+                                    type="text"
                                     placeholder="Enter your Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -85,7 +104,7 @@ function Signup() {
                                 <button
                                     type="button"
                                     className="password-toggle-icon"
-                                    onClick={() => setShowPassword(!showPassword)}
+                                    onClick={handleTogglePassword}
                                     tabIndex="-1"
                                 >
                                     {showPassword ? (

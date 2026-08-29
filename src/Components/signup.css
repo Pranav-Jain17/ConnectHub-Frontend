@@ -7,6 +7,7 @@ body {
     background: rgb(224, 224, 239);
     overflow-x: hidden;
     overflow-y: auto;
+    box-sizing: border-box;
 }
 
 .signup-page {
@@ -79,7 +80,7 @@ body {
 
 .signup-form .form-group label {
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     font-weight: 500;
     color: #4a5568;
     font-size: 0.95rem;
@@ -96,6 +97,7 @@ body {
     transition: border-color 0.2s;
     box-sizing: border-box;
     display: block;
+    line-height: normal;
 }
 
 .signup-form .form-group input:focus {
@@ -113,6 +115,8 @@ body {
     padding: 0 14px;
     padding-right: 45px;
     box-sizing: border-box;
+    display: block;
+    line-height: normal;
 }
 
 .password-toggle-icon {
@@ -129,6 +133,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2;
 }
 
 .password-toggle-icon img {
@@ -139,6 +144,14 @@ body {
 
 .password-toggle-icon:hover {
     opacity: 0.8;
+}
+
+.masked-password {
+    -webkit-text-security: disc;
+}
+
+.unmasked-password {
+    -webkit-text-security: none;
 }
 
 .btn-signup {
@@ -255,10 +268,7 @@ body {
 
     .password-toggle-icon {
         right: 10px;
-    }
-
-    .password-toggle-icon img {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
     }
 }
