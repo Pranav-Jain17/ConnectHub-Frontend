@@ -32,12 +32,7 @@ function Login() {
         }
     }, [showPassword]);
 
-    useEffect(() => {
-        const token = localStorage.getItem('loginToken');
-        if (token) {
-            navigate('/home', { replace: true });
-        }
-    }, [navigate]);
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
