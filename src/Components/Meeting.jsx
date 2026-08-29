@@ -174,7 +174,7 @@ export default function Meeting() {
                 <div className="logo">ConnectHub</div>
             </header>
 
-            <main className={`content-gap ${isAlone ? "single-layout" : "split-layout"}`}>
+            <main className={`content-gap ${isAlone ? "single-mode" : "split-mode"}`}>
                 <div className="video-container">
                     <video
                         ref={localVideoRef}
