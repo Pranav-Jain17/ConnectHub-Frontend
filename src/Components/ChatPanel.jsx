@@ -111,6 +111,46 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         console.log("✅ ChatPanel: Message sent & input cleared");
     };
 
+    useEffect(() => {
+        // Only run in browsers that support visualViewport
+        if (typeof window !== "undefined" && window.visualViewport) {
+            const footer = document.querySelector(".chat-panel-footer");
+
+            const adjustFooter = () => {
+                const keyboardHeight = window.innerHeight - window.visualViewport.height - (window.visualViewport.offsetTop || 0);
+                if (footer) {
+                    footer.style.transform = keyboardHeight > 0
+                        ? `translateY(-${keyboardHeight}px)`
+                        : "";
+                }
+            };
+
+            // Listen for viewport size changes (keyboard open/close)
+            window.visualViewport.addEventListener("resize", adjustFooter);
+            window.visualViewport.addEventListener("scroll", adjustFooter);
+
+            return () => {
+                window.visualViewport.removeEventListener("resize", adjustFooter);
+                window.visualViewport.removeEventListener("scroll", adjustFooter);
+            };
+        }
+    }, []);
+
+    useEffect(() => {
+        const onResize = () => {
+            if (messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+            }
+        };
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", onResize);
+            return () => {
+                window.visualViewport.removeEventListener("resize", onResize);
+            };
+        }
+    }, [messages]);
+
     return (
         <div className={`chat-panel-wrapper ${isOpen ? "open" : ""}`}>
             <div

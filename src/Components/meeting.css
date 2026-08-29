@@ -136,13 +136,14 @@ html {
     background: rgb(224, 224, 239);
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     position: relative;
-    gap: 20px;
+    gap: 10px;
     z-index: 101;
 }
 
 .meet-title-box,
 .room-id-box {
     display: flex;
+    flex: 1;
     align-items: center;
     padding: 10px 15px;
     background: rgba(0, 0, 0, 0.6);
@@ -150,9 +151,14 @@ html {
     border-radius: 8px;
     font-size: 14px;
     color: white;
-    width: fit-content;
-    max-width: 250px;
+    min-width: 0;
+    max-width: 220px;
     z-index: 10;
+}
+
+.room-id-box {
+    justify-content: flex-end;
+    margin-left: auto;
 }
 
 .meet-title-box span,
@@ -184,10 +190,10 @@ html {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    gap: 12px;
+    position: static;
+    transform: none;
+    flex: 2;
 }
 
 .btn {
@@ -322,6 +328,10 @@ input[inputmode="numeric"] {
 
 /* Tablets & Small Laptops   (≤ 1024px) */
 @media (max-width: 1024px) {
+    .toolbar {
+        padding: 0 15px;
+    }
+
     .content-gap {
         padding: 15px;
         gap: 15px;
@@ -329,47 +339,49 @@ input[inputmode="numeric"] {
 
     .meet-title-box,
     .room-id-box {
-        max-width: 180px;
+        max-width: 15px;
         font-size: 13px;
+        padding: 8px 10px;
     }
 
     .btn {
-        width: 48px;
-        height: 48px;
+        width: 46px;
+        height: 46px;
     }
 }
 
 /* Mobile Devices  (≤ 600px) */
-@media (max-width: 600px) {
-    .toolbar {
-        display: flex;
-        flex-direction: column;
-        height: auto;
-        padding: 15px;
-        gap: 12px;
-        justify-content: center;
-        align-items: center;
-    }
+@media (max-width: 760px) {}
 
-    .toolbuttons {
-        position: static;
-        transform: none;
-        order: 1;
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
-
-    .meet-title-box,
-    .room-id-box {
-        order: 2;
-        width: 100%;
-        max-width: 100%;
-        display: flex;
-        justify-content: center;
-        text-align: center;
-    }
+.toolbar {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    padding: 15px;
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
 }
+
+.toolbuttons {
+    position: static;
+    transform: none;
+    order: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+.meet-title-box,
+.room-id-box {
+    order: 2;
+    width: 100%;
+    max-width: 100%;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
 
 
 /* Small Mobile Phones (≤ 480px) */

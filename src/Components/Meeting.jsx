@@ -6,6 +6,7 @@ import { useWebRTC } from "../Hooks/useWebRTC";
 import ChatPanel from "./ChatPanel";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import ParticipantsPanel from "./ParticipantsPanel";
 
 export default function Meeting() {
     console.log("🎬 Meeting: Component rendering");
@@ -167,6 +168,7 @@ export default function Meeting() {
     };
 
     const isAlone = Object.keys(remoteStreams).length === 0;
+    const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
 
     return (
         <div className="layout">
@@ -230,7 +232,7 @@ export default function Meeting() {
                         <img src="/assets/svg/chat.svg" alt="Chat" />
                     </button>
 
-                    <button className="btn participant-btn">
+                    <button className="btn participant-btn" onClick={() => setIsParticipantsOpen(true)}>
                         <img src="/assets/svg/participants.svg" alt="participant" />
                     </button>
 
@@ -261,6 +263,13 @@ export default function Meeting() {
                 userName={userName}
             />
 
+            <ParticipantsPanel
+                isOpen={isParticipantsOpen}
+                onClose={() => setIsParticipantsOpen(false)}
+                roomId={roomId}
+                currentUserId={userId}
+            />
+
             {showEndConfirmModal && (
                 <ConfirmationModal
                     title="End Meeting"
@@ -281,14 +290,12 @@ export default function Meeting() {
     );
 }
 
-function RemoteVideo({ stream, userId }) {
+function RemoteVideo({ stream, userId, remoteUserName }) {
     const videoRef = useRef(null);
     const [isMicOn, setIsMicOn] = useState(true);
-    const userName = localStorage.getItem("userName") || "Remote User";
 
     useEffect(() => {
         if (!videoRef.current || !stream) return;
-
         videoRef.current.srcObject = stream;
         videoRef.current.play().catch((err) =>
             console.error("Remote play err:", err)
@@ -297,16 +304,11 @@ function RemoteVideo({ stream, userId }) {
         const audioTrack = stream.getAudioTracks()[0];
 
         if (audioTrack) {
-            // Initial state
             setIsMicOn(audioTrack.enabled);
-
-            // Listen for mic toggle
             const handleMute = () => setIsMicOn(false);
             const handleUnmute = () => setIsMicOn(true);
-
             audioTrack.addEventListener("mute", handleMute);
             audioTrack.addEventListener("unmute", handleUnmute);
-
             return () => {
                 audioTrack.removeEventListener("mute", handleMute);
                 audioTrack.removeEventListener("unmute", handleUnmute);
@@ -326,7 +328,7 @@ function RemoteVideo({ stream, userId }) {
                     }
                     alt=""
                 />
-                {userName}
+                {remoteUserName}
             </span>
         </div>
     );
