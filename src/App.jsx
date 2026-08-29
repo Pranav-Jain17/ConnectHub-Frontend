@@ -9,14 +9,26 @@ import ResetPassword from './Components/ResetPassword';
 import { SocketProvider } from './Providers/Socket';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { jwtDecode } from "jwt-decode";
+
+const checkAuth = () => {
+  const token = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+  if (!token) return false;
+  try {
+    const decoded = jwtDecode(token);
+    return decoded.exp * 1000 > Date.now();
+  } catch (err) {
+    return false;
+  }
+};
 
 const PrivateRoute = ({ children }) => {
-  const isAuth = !!localStorage.getItem("loginToken"); // '!!' converts the value to a boolean
+  const isAuth = checkAuth();
   return isAuth ? children : <Navigate to="/login" replace />;
 };
 
 const PublicRoute = ({ children }) => {
-  const isAuth = !!localStorage.getItem("loginToken");
+  const isAuth = checkAuth();
   return isAuth ? <Navigate to="/home" replace /> : children;
 };
 
