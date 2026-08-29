@@ -15,7 +15,7 @@ function Home({ userId }) {
         };
 
         // const response = await fetch('https://connecthub-2.onrender.com/meetings', {
-        const response = await fetch('http://localhost:3000/meetings', {
+        const response = await fetch('http://3.110.101.93:3000/meetings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -57,7 +57,7 @@ function Home({ userId }) {
     const joinMeeting = async (userId, roomId, loginToken) => {
         const response = await fetch(
             // https://connecthub-2.onrender.com/meetings/${userId}/join,
-            `http://localhost:3000/meetings/${userId}/join`,
+            `http://3.110.101.93:3000/meetings/${userId}/join`,
             {
                 method: 'POST',
                 headers: {

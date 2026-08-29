@@ -16,7 +16,7 @@ function Signup() {
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:3000/auth/signup', {
+            const response = await fetch('http://3.110.101.93:3000/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
