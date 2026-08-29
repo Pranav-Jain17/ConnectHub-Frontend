@@ -6,6 +6,8 @@ import ChatPanel from "./ChatPanel";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ParticipantsPanel from "./ParticipantsPanel";
+import useScreenShare from "../Hooks/useScreenShare";
+
 
 export default function Meeting() {
     const [roomId, setRoomId] = useState("");
@@ -197,6 +199,23 @@ export default function Meeting() {
         }
     };
 
+    //For screenshare
+    const {
+        localStreamRef,
+        peerConnectionsRef,
+    } = useWebRTC(socket, roomId, userId);
+
+    const {
+        isScreenSharing,
+        startScreenShare,
+        stopScreenShare,
+    } = useScreenShare({
+        peerConnectionsRef,
+        localStreamRef,
+        localVideoRef,
+    });
+
+
     return (
         <div className="layout">
             <header className="navbar">
@@ -259,6 +278,16 @@ export default function Meeting() {
                         <img
                             src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"}
                             alt=""
+                        />
+                    </button>
+
+                    <button
+                        className={`btn screen-btn ${isScreenSharing ? "btn-off" : ""}`}
+                        onClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                    >
+                        <img
+                            src="/assets/svg/screen-share.svg"
+                            alt="Screen Share"
                         />
                     </button>
 
