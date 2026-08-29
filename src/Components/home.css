@@ -4,11 +4,10 @@
 
 .home-page {
     display: flex;
-    justify-content: center;
-    align-items: center;
+    flex-direction: column;
     min-height: 100vh;
-    padding: 20px;
     background: rgb(224, 224, 239);
+    padding-top: 70px;
 }
 
 .top-nav {
@@ -22,12 +21,12 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 30px;
+    padding: 0 20px;
     z-index: 1000;
 }
 
 .app-logo {
-    font-size: 22px;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #1a3d7c;
     margin: 0;
@@ -36,16 +35,17 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 12px;
 }
 
 .btn-logout {
-    padding: 8px 18px;
+    padding: 8px 16px;
     border: 1px solid #d0d0d0;
     background: white;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 500;
+    white-space: nowrap;
     transition: 0.2s ease;
 }
 
@@ -64,48 +64,55 @@
 
 .home-container {
     display: flex;
-    flex-wrap: wrap;
-    width: 90%;
-    max-width: 1200px;
+    flex-direction: row;
+    width: 95%;
+    max-width: 1100px;
     background: #fff;
-    border-radius: 10px;
+    border-radius: 12px;
+    margin: auto;
     overflow: hidden;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .home-left {
     flex: 1 1 50%;
-    padding: 60px 40px;
-    box-sizing: border-box;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .home-left h1 {
-    font-size: 2.8rem;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
     margin-bottom: 20px;
     color: #223e63;
+    line-height: 1.2;
 }
 
 .home-left p {
-    font-size: 1.1rem;
-    margin-bottom: 40px;
+    font-size: 1.05rem;
+    margin-bottom: 35px;
     color: #4a5568;
-    line-height: 1.6;
+    line-height: 1.5;
 }
 
 .home-buttons {
     display: flex;
-    gap: 20px;
+    gap: 15px;
 }
 
 .btn-join,
 .btn-create {
-    padding: 14px 26px;
+    padding: 14px 24px;
     font-size: 1rem;
     font-weight: 500;
     border: none;
     cursor: pointer;
     border-radius: 6px;
-    transition: 0.2s ease-in-out;
+    transition: 0.2s ease;
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .btn-join {
@@ -129,60 +136,55 @@
 
 .home-right {
     flex: 1 1 50%;
+    background-color: rgb(193, 193, 251);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
-    background-color: rgb(193, 193, 251);
-    box-sizing: border-box;
 }
 
 .home-right img {
     width: 100%;
-    max-width: 500px;
-    display: block;
+    max-width: 450px;
     height: auto;
+    display: block;
 }
 
-/* Modal backdrop + box + content */
 .modal-backdrop {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    /* dark semi-transparent overlay */
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 2000;
-    /* above nav / everything else */
+    padding: 20px;
 }
 
 .modal-box {
     background: white;
-    padding: 24px 20px;
+    padding: 24px;
     border-radius: 8px;
-    width: 90%;
+    width: 100%;
     max-width: 400px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    box-sizing: border-box;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 }
 
 .modal-box h2 {
     margin: 0 0 16px;
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: #223e63;
 }
 
 .modal-box input[type="text"] {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px;
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box;
     margin-bottom: 20px;
 }
 
@@ -193,75 +195,93 @@
 }
 
 .modal-buttons button {
-    padding: 8px 16px;
-    font-size: 1rem;
+    padding: 10px 20px;
+    font-size: 0.95rem;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.2s ease;
 }
 
 .modal-buttons button:first-child {
-    /* Submit button — create/join */
     background-color: #1a73e8;
     color: white;
 }
 
-.modal-buttons button:first-child:hover {
-    background-color: #155fc2;
-}
-
 .modal-buttons button:last-child {
-    /* Cancel button */
     background-color: #f2f2f2;
     color: #333;
 }
 
-.modal-buttons button:last-child:hover {
-    background-color: #e0e0e0;
-}
-
-@media (max-width: 900px) {
-    .home-left h1 {
-        font-size: 2.4rem;
+@media (max-width: 992px) {
+    .home-container {
+        flex-direction: column;
+        width: 90%;
+        margin: 20px auto;
     }
-}
 
-@media (max-width: 768px) {
-
-    .home-left,
     .home-right {
-        flex: 1 1 100%;
-        max-width: 100%;
-        padding: 35px 20px;
+        order: -1;
+        padding: 30px;
     }
 
-    .home-left h1 {
-        font-size: 2.2rem;
-    }
-
-    .home-left p {
-        font-size: 1rem;
+    .home-left {
+        padding: 40px 30px;
+        text-align: center;
     }
 
     .home-buttons {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .home-buttons {
         flex-direction: column;
-        gap: 16px;
     }
 
     .btn-join,
     .btn-create {
         width: 100%;
-        text-align: center;
+    }
+
+    .top-nav {
+        padding: 0 15px;
+    }
+
+    .app-logo {
+        font-size: 1.1rem;
     }
 }
 
-@media (max-width: 480px) {
+@media (max-height: 500px) and (orientation: landscape) {
+    .home-page {
+        padding-top: 20px;
+        justify-content: flex-start;
+    }
+
+    .top-nav {
+        position: static;
+    }
+
+    .home-container {
+        flex-direction: row;
+        margin: 10px auto;
+    }
+
+    .home-right {
+        display: none;
+    }
+
+    .home-left {
+        padding: 20px;
+    }
+
     .home-left h1 {
-        font-size: 2rem;
+        font-size: 1.5rem;
+        margin-bottom: 10px;
     }
 
     .home-left p {
-        font-size: 0.95rem;
+        margin-bottom: 15px;
     }
 }
