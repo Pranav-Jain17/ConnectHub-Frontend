@@ -20,8 +20,6 @@ function Home() {
         const fetchReports = async () => {
             try {
                 const data = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings/reports/me', 'GET');
-                console.log("Fetched reports data:", data);
-                
                 if (Array.isArray(data)) {
                     setReports(data);
                 } else if (data && Array.isArray(data.meetings)) {
@@ -29,7 +27,6 @@ function Home() {
                 } else if (data && Array.isArray(data.reports)) {
                     setReports(data.reports);
                 } else {
-                    console.warn("Unexpected reports data structure:", data);
                     setReports([]);
                 }
             } catch (err) {
@@ -68,12 +65,10 @@ function Home() {
 
     const handleCreateMeeting = async (title) => {
         try {
-            // Step 1: Create the meeting to get a roomId
             const createData = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings', 'POST', {
                 title: title,
                 scheduledAt: new Date().toISOString()
             });
-            console.log("[Home.jsx] handleCreateMeeting - Received data from /meetings API:", createData);
 
             const { roomId } = createData;
             if (!roomId) {
@@ -81,16 +76,14 @@ function Home() {
                 return;
             }
 
-            // Step 2: Join the newly created room to get the token for the host
             const userId = localStorage.getItem("userId");
             const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
 
-            if (!joinData.token) {
+            if (typeof joinData.token !== 'string' || !joinData.token) {
                 toast.error("Failed to retrieve a valid meeting token from the server.");
                 return;
             }
 
-            // Step 3: Store credentials and navigate
             localStorage.setItem("roomId", roomId);
             localStorage.setItem("meetTitle", title);
             localStorage.setItem("isHost", "true");
@@ -113,7 +106,7 @@ function Home() {
             }
             const data = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
             
-            if (!data.token) {
+            if (typeof data.token !== 'string' || !data.token) {
                 toast.error("Failed to retrieve a valid meeting token from the server.");
                 return;
             }

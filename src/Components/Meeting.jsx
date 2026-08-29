@@ -90,7 +90,6 @@ export default function Meeting() {
         const storedUserId = localStorage.getItem("userId");
         const url = localStorage.getItem("livekitUrl");
         const token = localStorage.getItem("livekitToken");
-        console.log("[Meeting.jsx] Component mounted. Retrieved from localStorage:", { url, token });
 
         if (!storedRoomId || !storedUserId || !url || !token) {
             navigate("/home", { replace: true });

@@ -61,7 +61,6 @@ export const useWebRTC = (livekitUrl, token) => {
         };
 
         if (livekitUrl && token) {
-            console.log("[useWebRTC.js] useEffect triggered. Calling connectToLiveKit with:", { livekitUrl, token });
             connectToLiveKit();
         }
 

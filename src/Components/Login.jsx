@@ -65,7 +65,6 @@ function Login() {
             }
 
             const data = await response.json();
-            console.log("[Login.jsx] Received data from /auth/login:", data);
             const loginToken = data.token;
 
             if (!rememberMe) {
