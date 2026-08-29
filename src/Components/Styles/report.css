@@ -17,15 +17,15 @@
 
 .navbar {
     height: 64px;
-    background-color: #1a73e8; /* Primary Blue */
+    background-color: rgb(224, 224, 239);
     display: flex;
     align-items: center;
     padding: 0 2rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .navbar .logo {
-    color: white;
+    color: #1a1a1a;
     text-decoration: none;
     font-size: 1.5rem;
     font-weight: bold;

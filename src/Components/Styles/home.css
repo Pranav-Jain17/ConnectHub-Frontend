@@ -39,7 +39,7 @@ body {
     left: 0;
     right: 0;
     height: 70px;
-    background: #1a73e8; /* Primary Blue */
+    background: white;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     display: flex;
     align-items: center;
@@ -51,7 +51,7 @@ body {
 .app-logo {
     font-size: 1.5rem;
     font-weight: 700;
-    color: white;
+    color: #1a3d7c;
     margin: 0;
 }
 
@@ -64,7 +64,7 @@ body {
 
 .user-display-name {
     font-weight: 500;
-    color: white;
+    color: #4a5568;
     font-size: 1rem;
 }
 
