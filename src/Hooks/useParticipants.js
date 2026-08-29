@@ -51,5 +51,5 @@ export const useParticipants = (roomId, socket) => {
         };
     }, [socket, fetchParticipants]);
 
-    return { participants };
+    return { participants, refetch: fetchParticipants };
 };

@@ -42,7 +42,7 @@ export default function Meeting() {
 
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
-    const { participants } = useParticipants(roomId, socket);
+    const { participants, refetch: refetchParticipants } = useParticipants(roomId, socket);
     const loginToken = localStorage.getItem("loginToken");
 
     const apiRequest = async (url, method, body = null) => {
@@ -98,6 +98,13 @@ export default function Meeting() {
     } = useWebRTC(livekitUrl, livekitToken);
 
     const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
+    const remoteStreamCount = Object.keys(remoteStreams || {}).length;
+
+    // Refetch participants whenever LiveKit detects a stream change
+    // (participant connected/disconnected) — this is event-driven via LiveKit's own signaling
+    useEffect(() => {
+        refetchParticipants();
+    }, [remoteStreamCount, refetchParticipants]);
 
     const participantNameMap = useMemo(() => {
         const map = {};
