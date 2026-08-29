@@ -53,7 +53,7 @@ function Login() {
         <div className="login-page">
             <div className="login-container">
                 <div className="login-image-side">
-                    <img src="public/assets/signup.png" alt="Welcome back" />
+                    <img src="/assets/signup.png" alt="Welcome back" />
                 </div>
                 <div className="login-form-side">
                     <h2>Hello,<br />Welcome Back</h2>
