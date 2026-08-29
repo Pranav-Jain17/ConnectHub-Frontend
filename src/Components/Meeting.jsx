@@ -21,6 +21,8 @@ export default function Meeting() {
     const { socket } = useSocket();
     const localVideoRef = useRef(null);
     const navigate = useNavigate();
+    const [peerMicState, setPeerMicState] = useState({});
+    const [participants, setParticipants] = useState([]);
 
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
@@ -57,7 +59,31 @@ export default function Meeting() {
         }
     }, [localStreamReady, localStream]);
 
-    const handleMicToggle = () => setIsMicOn(toggleMic());
+    useEffect(() => {
+        if (!socket) return;
+
+        const handlePeerMicState = ({ userId: peerId, isMicOn }) => {
+            setPeerMicState((prev) => ({
+                ...prev,
+                [peerId]: isMicOn,
+            }));
+        };
+
+        socket.on("peer-mic-state", handlePeerMicState);
+
+        return () => {
+            socket.off("peer-mic-state", handlePeerMicState);
+        };
+    }, [socket]);
+
+    // const handleMicToggle = () => setIsMicOn(toggleMic());
+    const handleMicToggle = () => {
+        const newState = toggleMic();
+        setIsMicOn(newState);
+
+        socket?.emit("mic-toggle", { isMicOn: newState });
+    };
+
     const handleVideoToggle = () => setIsVideoOn(toggleVideo());
 
     const copyRoomId = async () => {
@@ -69,6 +95,14 @@ export default function Meeting() {
             console.error("❌ Failed to copy:", err);
         }
     };
+
+    const participantNameMap = React.useMemo(() => {
+        const map = {};
+        participants.forEach((p) => {
+            map[p._id] = p.username || "Unknown User";
+        });
+        return map;
+    }, [participants]);
 
     const clearMeetingStorage = () => {
         localStorage.removeItem("roomId");
@@ -100,32 +134,6 @@ export default function Meeting() {
             socket.off("room-full", handleRoomFull);
         };
     }, [socket, navigate]);
-
-    useEffect(() => {
-        // 1. Manually push a state so there is a "cushion" to go back from
-        window.history.pushState(null, null, window.location.pathname);
-
-        const handlePopState = (event) => {
-            // 2. Immediately push it back to keep the user on this URL
-            window.history.pushState(null, null, window.location.pathname);
-
-            // 3. Logic to close panels or show modal
-            if (isChatOpen) {
-                setIsChatOpen(false);
-            } else if (isParticipantsOpen) {
-                setIsParticipantsOpen(false);
-            } else {
-                if (isHost) {
-                    setShowEndConfirmModal(true);
-                } else {
-                    setShowLeaveConfirmModal(true);
-                }
-            }
-        };
-
-        window.addEventListener("popstate", handlePopState);
-        return () => window.removeEventListener("popstate", handlePopState);
-    }, [isChatOpen, isParticipantsOpen, isHost]);
 
     const leaveMeeting = async () => {
         const token = localStorage.getItem("loginToken");
@@ -213,8 +221,16 @@ export default function Meeting() {
                     </span>
                 </div>
 
-                {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
+                {/* {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
                     <RemoteVideo key={remoteUserId} stream={stream} userId={remoteUserId} />
+                ))} */}
+                {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
+                    <RemoteVideo
+                        key={remoteUserId}
+                        stream={stream}
+                        isMicOn={peerMicState[remoteUserId]}
+                        name={participantNameMap[remoteUserId] || "Remote User"}
+                    />
                 ))}
             </main>
 
@@ -281,12 +297,22 @@ export default function Meeting() {
                 userName={userName}
             />
 
+            {/* <ParticipantsPanel
+                isOpen={isParticipantsOpen}
+                onClose={() => setIsParticipantsOpen(false)}
+                roomId={roomId}
+                currentUserId={userId}
+            /> */}
             <ParticipantsPanel
                 isOpen={isParticipantsOpen}
                 onClose={() => setIsParticipantsOpen(false)}
                 roomId={roomId}
                 currentUserId={userId}
+                socket={socket}
+                participants={participants}
+                setParticipants={setParticipants}
             />
+
 
             {showEndConfirmModal && (
                 <ConfirmationModal
@@ -308,30 +334,53 @@ export default function Meeting() {
     );
 }
 
-function RemoteVideo({ stream }) {
+// function RemoteVideo({ stream, isMicOn = true }) {
+//     const videoRef = useRef(null);
+//     const [isMicOn, setIsMicOn] = useState(true);
+
+//     useEffect(() => {
+//         if (!videoRef.current || !stream) return;
+//         videoRef.current.srcObject = stream;
+//         videoRef.current.play().catch((err) =>
+//             console.error("Remote play err:", err)
+//         );
+
+//         const audioTrack = stream.getAudioTracks()[0];
+
+//         if (audioTrack) {
+//             setIsMicOn(audioTrack.enabled);
+//             const handleMute = () => setIsMicOn(false);
+//             const handleUnmute = () => setIsMicOn(true);
+//             audioTrack.addEventListener("mute", handleMute);
+//             audioTrack.addEventListener("unmute", handleUnmute);
+//             return () => {
+//                 audioTrack.removeEventListener("mute", handleMute);
+//                 audioTrack.removeEventListener("unmute", handleUnmute);
+//             };
+//         }
+//     }, [stream]);
+
+//     return (
+//         <div className="video-container">
+//             <video ref={videoRef} autoPlay playsInline className="remote-video" />
+//             <span className="video-label">
+//                 <img
+//                     src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
+//                     alt=""
+//                 />
+//                 Remote User
+//             </span>
+//         </div>
+//     );
+// }
+
+function RemoteVideo({ stream, isMicOn = true, name = "Remote User" }) {
     const videoRef = useRef(null);
-    const [isMicOn, setIsMicOn] = useState(true);
 
     useEffect(() => {
         if (!videoRef.current || !stream) return;
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch((err) =>
-            console.error("Remote play err:", err)
-        );
-
-        const audioTrack = stream.getAudioTracks()[0];
-
-        if (audioTrack) {
-            setIsMicOn(audioTrack.enabled);
-            const handleMute = () => setIsMicOn(false);
-            const handleUnmute = () => setIsMicOn(true);
-            audioTrack.addEventListener("mute", handleMute);
-            audioTrack.addEventListener("unmute", handleUnmute);
-            return () => {
-                audioTrack.removeEventListener("mute", handleMute);
-                audioTrack.removeEventListener("unmute", handleUnmute);
-            };
-        }
+        videoRef.current.play().catch(() => { });
     }, [stream]);
 
     return (
@@ -342,7 +391,7 @@ function RemoteVideo({ stream }) {
                     src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
                     alt=""
                 />
-                Remote User
+                {name}
             </span>
         </div>
     );

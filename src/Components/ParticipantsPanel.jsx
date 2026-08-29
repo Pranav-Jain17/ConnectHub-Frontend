@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./participantsPanel.css";
 
-export default function ParticipantsPanel({ isOpen, onClose, roomId, currentUserId, socket }) {
-    const [participants, setParticipants] = useState([]);
+export default function ParticipantsPanel({ isOpen, onClose, roomId, currentUserId, socket, participants, setParticipants }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
