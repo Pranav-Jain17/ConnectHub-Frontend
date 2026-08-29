@@ -283,18 +283,51 @@ export default function Meeting() {
 
 function RemoteVideo({ stream, userId }) {
     const videoRef = useRef(null);
+    const [isMicOn, setIsMicOn] = useState(true);
     const userName = localStorage.getItem("userName") || "Remote User";
 
     useEffect(() => {
         if (!videoRef.current || !stream) return;
+
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch((err) => console.error("Remote play err:", err));
+        videoRef.current.play().catch((err) =>
+            console.error("Remote play err:", err)
+        );
+
+        const audioTrack = stream.getAudioTracks()[0];
+
+        if (audioTrack) {
+            // Initial state
+            setIsMicOn(audioTrack.enabled);
+
+            // Listen for mic toggle
+            const handleMute = () => setIsMicOn(false);
+            const handleUnmute = () => setIsMicOn(true);
+
+            audioTrack.addEventListener("mute", handleMute);
+            audioTrack.addEventListener("unmute", handleUnmute);
+
+            return () => {
+                audioTrack.removeEventListener("mute", handleMute);
+                audioTrack.removeEventListener("unmute", handleUnmute);
+            };
+        }
     }, [stream]);
 
     return (
         <div className="video-container">
             <video ref={videoRef} autoPlay playsInline className="remote-video" />
-            <span className="video-label">{userName}</span>
+            <span className="video-label">
+                <img
+                    src={
+                        isMicOn
+                            ? "/assets/svg/mic.svg"
+                            : "/assets/svg/mic-off.svg"
+                    }
+                    alt=""
+                />
+                {userName}
+            </span>
         </div>
     );
 }

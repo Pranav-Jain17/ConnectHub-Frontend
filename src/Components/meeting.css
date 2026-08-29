@@ -306,20 +306,21 @@ input[inputmode="numeric"] {
     font-size: 20px;
 }
 
-@media (orientation: landscape) and (min-width: 600px) {
+@media (orientation: landscape) {
     .split-mode {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr;
     }
 }
 
-@media (orientation: portrait) and (max-width: 599px) {
+@media (orientation: portrait) {
     .split-mode {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr 1fr;
     }
 }
 
+/* Tablets & Small Laptops   (≤ 1024px) */
 @media (max-width: 1024px) {
     .content-gap {
         padding: 15px;
@@ -338,13 +339,16 @@ input[inputmode="numeric"] {
     }
 }
 
+/* Mobile Devices  (≤ 600px) */
 @media (max-width: 600px) {
-
     .toolbar {
+        display: flex;
         flex-direction: column;
         height: auto;
         padding: 15px;
         gap: 12px;
+        justify-content: center;
+        align-items: center;
     }
 
     .toolbuttons {
@@ -352,23 +356,23 @@ input[inputmode="numeric"] {
         transform: none;
         order: 1;
         width: 100%;
+        display: flex;
+        justify-content: center;
     }
 
-    .meet-title-box {
+    .meet-title-box,
+    .room-id-box {
         order: 2;
         width: 100%;
         max-width: 100%;
+        display: flex;
         justify-content: center;
-    }
-
-    .room-id-box {
-        order: 3;
-        width: 100%;
-        max-width: 100%;
-        justify-content: center;
+        text-align: center;
     }
 }
 
+
+/* Small Mobile Phones (≤ 480px) */
 @media (max-width: 480px) {
     .navbar {
         padding: 0 15px;
