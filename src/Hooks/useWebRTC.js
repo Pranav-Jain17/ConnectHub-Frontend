@@ -10,6 +10,10 @@ export const useWebRTC = (socket, roomId, userId) => {
     const iceServers = {
         iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' },
             {
                 urls: 'turn:openrelay.metered.ca:80',
                 username: 'openrelayproject',
@@ -26,6 +30,8 @@ export const useWebRTC = (socket, roomId, userId) => {
                 credential: 'openrelayproject',
             },
         ],
+        sdpSemantics: 'unified-plan',
+        iceCandidatePoolSize: 10,
     };
 
     const handleUserDisconnected = useCallback((remoteUserId) => {
@@ -105,24 +111,32 @@ export const useWebRTC = (socket, roomId, userId) => {
             }
 
             pc.ontrack = (event) => {
-                let incomingStream = null;
-                if (event.streams && event.streams[0]) {
-                    incomingStream = event.streams[0];
-                } else {
-                    incomingStream = new MediaStream();
-                    if (event.track) incomingStream.addTrack(event.track);
-                }
-
+                const { streams, track } = event;
+                
                 setRemoteStreams((prev) => {
-                    const existing = prev[remoteUserId];
-                    if (!existing) {
-                        return { ...prev, [remoteUserId]: incomingStream };
+                    const existingStream = prev[remoteUserId];
+                    
+                    if (streams && streams[0]) {
+                        // If a stream is already provided, use it. 
+                        // But if we already have a stream, we might need to merge tracks.
+                        if (!existingStream) {
+                            return { ...prev, [remoteUserId]: streams[0] };
+                        } else {
+                            streams[0].getTracks().forEach(t => {
+                                if (!existingStream.getTracks().find(et => et.id === t.id)) {
+                                    existingStream.addTrack(t);
+                                }
+                            });
+                            // Create new instance to trigger React re-render
+                            return { ...prev, [remoteUserId]: new MediaStream(existingStream.getTracks()) };
+                        }
                     } else {
-                        incomingStream.getTracks().forEach((t) => {
-                            const already = existing.getTracks().some((et) => et.id === t.id);
-                            if (!already) existing.addTrack(t);
-                        });
-                        return { ...prev, [remoteUserId]: existing };
+                        // Fallback: add individual track to existing or new stream
+                        const stream = existingStream || new MediaStream();
+                        if (track && !stream.getTracks().find(t => t.id === track.id)) {
+                            stream.addTrack(track);
+                        }
+                        return { ...prev, [remoteUserId]: new MediaStream(stream.getTracks()) };
                     }
                 });
             };
@@ -240,9 +254,21 @@ export const useWebRTC = (socket, roomId, userId) => {
     }, [socket, roomId, userId, handleUserDisconnected]);
 
     useEffect(() => {
-        if (socket && roomId && userId && localStreamReady) {
+        if (!socket || !roomId || !userId || !localStreamReady) return;
+
+        const handleJoin = () => {
             socket.emit('join-room', roomId, userId);
+        };
+
+        if (socket.connected) {
+            handleJoin();
         }
+
+        socket.on('connect', handleJoin);
+
+        return () => {
+            socket.off('connect', handleJoin);
+        };
     }, [socket, roomId, userId, localStreamReady]);
 
     const toggleMic = useCallback(() => {

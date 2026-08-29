@@ -9,11 +9,9 @@ export const useSocket = () => {
 
 export const SocketProvider = (props) => {
     const socket = useMemo(() => {
-        const token = localStorage.getItem('loginToken');
-
         const socketInstance = io('https://connecthub.dikshant-ahalawat.live', {
-            auth: {
-                token: token
+            auth: (cb) => {
+                cb({ token: localStorage.getItem('loginToken') });
             },
             autoConnect: false,
         });

@@ -38,6 +38,12 @@ export default function Meeting() {
     const userName = localStorage.getItem("userName") || "You";
     const { participants } = useParticipants(roomId, socket);
 
+    useEffect(() => {
+        if (socket && !socket.connected) {
+            socket.connect();
+        }
+    }, [socket]);
+
     const {
         localStream,
         localStreamReady,
