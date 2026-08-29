@@ -160,12 +160,13 @@ export default function Meeting() {
             }
 
             clearMeetingStorage();
-            toast.success("Meeting ended successfully");
             navigate("/home");
         } catch (err) {
             toast.error("Error ending meeting");
         }
     };
+
+    const isAlone = Object.keys(remoteStreams).length === 0;
 
     return (
         <div className="layout">
@@ -173,7 +174,7 @@ export default function Meeting() {
                 <div className="logo">ConnectHub</div>
             </header>
 
-            <main className="content-gap">
+            <main className={`content-gap ${isAlone ? "single-layout" : "split-layout"}`}>
                 <div className="video-container">
                     <video
                         ref={localVideoRef}
@@ -199,8 +200,7 @@ export default function Meeting() {
 
             <div className="toolbar">
                 <div className="meet-title-box">
-                    <span className="room-id-label">Title:</span>
-                    <span className="room-id-value">{meetTitle}</span>
+                    <span className="meet-title-value">Meet Title : {meetTitle}</span>
                 </div>
 
                 <div className="toolbuttons">
@@ -230,6 +230,10 @@ export default function Meeting() {
                         <img src="/assets/svg/chat.svg" alt="Chat" />
                     </button>
 
+                    <button className="btn participant-btn">
+                        <img src="/assets/svg/participants.svg" alt="participant" />
+                    </button>
+
                     <button
                         className="btn end-btn"
                         onClick={() =>
@@ -241,7 +245,7 @@ export default function Meeting() {
                 </div>
 
                 <div className="room-id-box">
-                    <span className="room-id-value">{roomId}</span>
+                    <span className="room-id-value">Room ID : {roomId}</span>
                     <button className="copy-btn" onClick={copyRoomId}>
                         <img src="/assets/svg/copyCode.svg" alt="Copy room id" />
                     </button>
@@ -290,20 +294,32 @@ function RemoteVideo({ stream, userId }) {
     return (
         <div className="video-container">
             <video ref={videoRef} autoPlay playsInline className="remote-video" />
-            {/* <span className="video-label">User {userId.substring(0, 8)}</span> */}
             <span className="video-label">{userName}</span>
         </div>
     );
 }
 
 function ConfirmationModal({ title, message, onConfirm, onCancel }) {
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') {
+                onConfirm();
+            } else if (e.key === 'Escape') {
+                onCancel();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [onConfirm, onCancel]);
+
     return (
-        <div className="modal-backdrop">
-            <div className="modal-box">
+        <div className="modal-backdrop" onClick={onCancel}>
+            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
                 <h2>{title}</h2>
                 <p>{message}</p>
                 <div className="modal-buttons">
-                    <button onClick={onConfirm}>Yes</button>
+                    <button onClick={onConfirm} autoFocus>Yes</button>
                     <button onClick={onCancel}>Cancel</button>
                 </div>
             </div>

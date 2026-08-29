@@ -211,17 +211,29 @@ function Home({ userId }) {
                         <input
                             autoFocus
                             type="text"
+                            inputMode={modalType === "join" ? "numeric" : "text"}
                             value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (modalType === "join") {
+                                    if (val === "" || /^[0-9]+$/.test(val)) {
+                                        setInputValue(val);
+                                    }
+                                } else {
+                                    setInputValue(val);
+                                }
+                            }}
                             onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                     handleModalSubmit();
+                                } else if (e.key === "Escape") {
+                                    closeModal();
                                 }
                             }}
                             placeholder={
                                 modalType === "create"
                                     ? "e.g. Planning Meeting"
-                                    : "e.g. abc123"
+                                    : "e.g. 123456"
                             }
                         />
                         <div className="modal-buttons">
