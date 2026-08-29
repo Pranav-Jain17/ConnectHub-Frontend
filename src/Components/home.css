@@ -1,0 +1,99 @@
+.home-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: rgb(224, 224, 239);
+}
+
+.home-container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 90%;
+    max-width: 1200px;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.home-left {
+    padding: 60px 40px;
+    box-sizing: border-box;
+}
+
+.home-left h1 {
+    font-size: 2.8rem;
+    margin-bottom: 20px;
+    color: #223e63;
+}
+
+.home-left p {
+    font-size: 1.1rem;
+    margin-bottom: 40px;
+    color: #4a5568;
+}
+
+.home-buttons {
+    display: flex;
+    gap: 20px;
+}
+
+.btn-join,
+.btn-create {
+    padding: 14px 24px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-join {
+    background-color: #1a73e8;
+    color: #fff;
+}
+
+.btn-create {
+    background-color: #fff;
+    color: #1a73e8;
+    border: 2px solid #1a73e8;
+}
+
+.home-right {
+    flex: 1 1 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    box-sizing: border-box;
+    background-color: rgb(193, 193, 251);
+}
+
+.home-right img {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+
+    .home-left,
+    .home-right {
+        flex: 1 1 100%;
+        max-width: 100%;
+        padding: 30px 20px;
+    }
+
+    .home-left h1 {
+        font-size: 2.2rem;
+    }
+
+    .home-left p {
+        font-size: 1rem;
+    }
+
+    .home-buttons {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
