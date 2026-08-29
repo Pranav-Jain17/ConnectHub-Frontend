@@ -63,8 +63,10 @@ function Login() {
             const loginToken = data.token;
 
             if (rememberMe) {
+                sessionStorage.removeItem('loginToken');
                 localStorage.setItem('loginToken', loginToken);
             } else {
+                localStorage.removeItem('loginToken');
                 sessionStorage.setItem('loginToken', loginToken);
             }
             localStorage.setItem('userId', data.userId);

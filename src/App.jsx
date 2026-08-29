@@ -10,9 +10,10 @@ import { SocketProvider } from './Providers/Socket';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { jwtDecode } from "jwt-decode";
+import { getLoginToken } from './utils/auth';
 
 const checkAuth = () => {
-  const token = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+  const token = getLoginToken();
   if (!token) return false;
   try {
     const decoded = jwtDecode(token);

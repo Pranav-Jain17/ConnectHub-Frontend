@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import HomeModals from './HomeModals';
 import './Styles/home.css';
 import { useSocket } from '../Hooks/useSocket';
+import { getLoginToken } from '../utils/auth';
 
 function Home() {
     const navigate = useNavigate();
@@ -12,7 +13,7 @@ function Home() {
 
     const userName = localStorage.getItem("userName") || "User";
     const userEmail = localStorage.getItem("userEmail") || "user@example.com";
-    const loginToken = localStorage.getItem("loginToken");
+    const loginToken = getLoginToken();
 
     const [showDropdown, setShowDropdown] = useState(false);
     const [modalType, setModalType] = useState(null);

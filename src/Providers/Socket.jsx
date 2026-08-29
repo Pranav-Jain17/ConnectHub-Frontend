@@ -1,12 +1,13 @@
 import React, { useMemo, useEffect } from "react";
 import { io } from "socket.io-client";
 import { SocketContext } from "../Hooks/useSocket";
+import { getLoginToken } from "../utils/auth";
 
 export const SocketProvider = (props) => {
     const socket = useMemo(() => {
         const socketInstance = io('https://connecthub.dikshant-ahalawat.live', {
             auth: (cb) => {
-                cb({ token: localStorage.getItem('loginToken') });
+                cb({ token: getLoginToken() });
             },
             autoConnect: false,
         });
@@ -15,7 +16,7 @@ export const SocketProvider = (props) => {
     }, []);
 
     useEffect(() => {
-        const token = localStorage.getItem('loginToken');
+        const token = getLoginToken();
 
         if (token) {
             socket.connect();
