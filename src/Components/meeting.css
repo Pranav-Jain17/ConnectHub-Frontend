@@ -1,3 +1,5 @@
+/* --- existing layout & video/toolbar styles --- */
+
 .layout {
     display: grid;
     grid-template-rows: 60px 1fr 70px;
@@ -19,7 +21,6 @@
     color: white;
 }
 
-/* ✅ Updated content-gap for video grid */
 .content-gap {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -29,7 +30,6 @@
     overflow-y: auto;
 }
 
-/* ✅ Video container styles */
 .video-container {
     position: relative;
     background: #000;
@@ -48,7 +48,7 @@
 
 .local-video {
     transform: scaleX(-1);
-    /* Mirror effect for local video */
+    /* mirror local video */
 }
 
 .video-label {
@@ -162,7 +162,6 @@
     background: #c9302c;
 }
 
-/* ✅ Responsive video grid */
 @media (max-width: 900px) {
     .content-gap {
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -230,7 +229,6 @@
     }
 }
 
-/* ✅ Custom scrollbar for video grid */
 .content-gap::-webkit-scrollbar {
     width: 8px;
 }
@@ -248,7 +246,6 @@
     background: #4e545b;
 }
 
-/* ✅ Button off state */
 .btn-off {
     background: #d9534f !important;
 }
@@ -257,7 +254,98 @@
     background: #c9302c !important;
 }
 
-/* ✅ Visual feedback for disabled state */
 .btn-off img {
     opacity: 0.9;
+}
+
+/* --- NEW: Modal styles (backdrop + box) --- */
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    animation: fadeInBackdrop 0.2s forwards;
+}
+
+@keyframes fadeInBackdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-box {
+    background: #fff;
+    padding: 24px 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+.modal-box h2 {
+    margin: 0 0 16px;
+    font-size: 1.5rem;
+    color: #223e63;
+}
+
+.modal-box p {
+    margin-bottom: 20px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-buttons button:first-child {
+    background-color: #d9534f;
+    color: white;
+}
+
+.modal-buttons button:first-child:hover {
+    background-color: #c9302c;
+}
+
+.modal-buttons button:last-child {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.modal-buttons button:last-child:hover {
+    background-color: #c0c0c0;
+}
+
+/* Lock background scroll when modal is open */
+body.modal-open,
+html.modal-open {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
 }

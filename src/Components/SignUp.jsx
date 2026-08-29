@@ -31,7 +31,7 @@ function Signup() {
             const data = await response.json();
             toast.success('User created successfully');
             setTimeout(() => {
-                navigate('/');
+                navigate('/login');
             }, 1500);
 
         } catch (err) {

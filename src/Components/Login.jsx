@@ -39,6 +39,7 @@ function Login() {
             }
 
             const data = await response.json();
+            console.log("RESPONSE: " + JSON.stringify(data));
             const loginToken = data.token;
 
             if (!rememberMe) {
@@ -46,6 +47,7 @@ function Login() {
             }
             localStorage.setItem('loginToken', loginToken);
             localStorage.setItem('userId', data.userId);
+            localStorage.setItem('userName', data.username);
             toast.success("Logged in successfully!");
             navigate('/home');
         } catch (err) {

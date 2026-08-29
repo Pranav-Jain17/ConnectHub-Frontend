@@ -140,6 +140,83 @@
     height: auto;
 }
 
+/* Modal backdrop + box + content */
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    /* dark semi-transparent overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    /* above nav / everything else */
+}
+
+.modal-box {
+    background: white;
+    padding: 24px 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+.modal-box h2 {
+    margin: 0 0 16px;
+    font-size: 1.5rem;
+    color: #223e63;
+}
+
+.modal-box input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-bottom: 20px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-buttons button:first-child {
+    /* Submit button — create/join */
+    background-color: #1a73e8;
+    color: white;
+}
+
+.modal-buttons button:first-child:hover {
+    background-color: #155fc2;
+}
+
+.modal-buttons button:last-child {
+    /* Cancel button */
+    background-color: #f2f2f2;
+    color: #333;
+}
+
+.modal-buttons button:last-child:hover {
+    background-color: #e0e0e0;
+}
+
 @media (max-width: 900px) {
     .home-left h1 {
         font-size: 2.4rem;

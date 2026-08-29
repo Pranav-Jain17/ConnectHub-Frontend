@@ -1,3 +1,4 @@
+// Home.jsx
 import React, { useState } from 'react';
 import './home.css';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +16,6 @@ function Home({ userId }) {
             scheduledAt: now
         };
 
-        // const response = await fetch('https://connecthub-2.onrender.com/meetings', {
         const response = await fetch('http://3.110.101.93:3000/meetings', {
             method: 'POST',
             headers: {
@@ -34,30 +34,8 @@ function Home({ userId }) {
         return response.json();
     };
 
-    const handleCreateMeet = async () => {
-        const meetTitle = prompt("Enter meeting title:");
-
-        if (!meetTitle) {
-            alert('Title is required');
-            return;
-        }
-
-        try {
-            const data = await createMeeting(meetTitle);
-            const roomId = data.roomId;
-
-            localStorage.setItem("roomId", roomId);
-            localStorage.setItem("meetTitle", meetTitle);
-
-            navigate("/meeting");
-        } catch (err) {
-            alert(`Error creating meet: ${err.message}`);
-        }
-    };
-
     const joinMeeting = async (userId, roomId, loginToken) => {
         const response = await fetch(
-            // https://connecthub-2.onrender.com/meetings/${userId}/join,
             `http://3.110.101.93:3000/meetings/${userId}/join`,
             {
                 method: 'POST',
@@ -76,42 +54,6 @@ function Home({ userId }) {
         }
 
         return response.json();
-    };
-
-    const handleJoinMeet = async () => {
-        const userId = localStorage.getItem("userId");
-        const loginToken = localStorage.getItem("loginToken");
-
-        if (!userId || !loginToken) {
-            alert("User ID or login token missing.");
-            return;
-        }
-
-        const roomId = prompt("Enter Room ID to join:");
-
-        if (!roomId) {
-            alert("Room ID is required.");
-            return;
-        }
-
-        // ✅ store roomId for Meeting screen
-        localStorage.setItem("roomId", roomId);
-
-        try {
-            const data = await joinMeeting(userId, roomId, loginToken);
-            alert("Joined meet successfully!");
-
-            // ✅ if backend returns a title, use it; else fallback
-            if (data && data.title) {
-                localStorage.setItem("meetTitle", data.title);
-            } else {
-                localStorage.setItem("meetTitle", `Meeting ${roomId}`);
-            }
-
-            navigate("/meeting");
-        } catch (err) {
-            alert(`Error joining meet: ${err.message}`);
-        }
     };
 
     const logoutUser = async (loginToken) => {
@@ -134,7 +76,6 @@ function Home({ userId }) {
 
     const handleLogout = async () => {
         const loginToken = localStorage.getItem("loginToken");
-
         try {
             if (loginToken) {
                 await logoutUser(loginToken);
@@ -142,14 +83,78 @@ function Home({ userId }) {
         } catch (err) {
             console.error("Error while logging out:", err.message);
         } finally {
-            localStorage.removeItem("loginToken");
-            localStorage.removeItem("userId");
-            localStorage.removeItem("roomId");
-            localStorage.removeItem("meetTitle");
-
+            sessionStorage.clear();
+            localStorage.clear();
             toast.success("Logged out successfully");
-            navigate("/login");          // Redirect to Login Page
+            navigate("/login");
         }
+    };
+
+    // STATE for modals & input
+    const [modalType, setModalType] = useState(null); // 'create' | 'join' | null
+    const [inputValue, setInputValue] = useState("");
+
+    const openCreateModal = () => {
+        setInputValue("");
+        setModalType("create");
+    };
+
+    const openJoinModal = () => {
+        setInputValue("");
+        setModalType("join");
+    };
+
+    const closeModal = () => {
+        setInputValue("");
+        setModalType(null);
+    };
+
+    const handleModalSubmit = async () => {
+        if (!inputValue) {
+            toast.error(
+                modalType === "create"
+                    ? "Meet Title is required !!"
+                    : "Room ID is required."
+            );
+            return;
+        }
+
+        if (modalType === "create") {
+            try {
+                const data = await createMeeting(inputValue);
+                const roomId = data.roomId;
+                localStorage.setItem("roomId", roomId);
+                localStorage.setItem("meetTitle", inputValue);
+                localStorage.setItem("isHost", "true");
+                navigate("/meeting");
+            } catch (err) {
+                toast.error(`Error creating meet: ${err.message}`);
+            }
+        } else if (modalType === "join") {
+            const storedUserId = localStorage.getItem("userId");
+            const loginToken = localStorage.getItem("loginToken");
+            if (!storedUserId || !loginToken) {
+                toast.error("User ID or login token missing.");
+                closeModal();
+                return;
+            }
+            localStorage.setItem("roomId", inputValue);
+            try {
+                const data = await joinMeeting(storedUserId, inputValue, loginToken);
+                toast.success("Joined meet successfully!");
+                if (data && data.title) {
+                    localStorage.setItem("meetTitle", data.title);
+                } else {
+                    localStorage.setItem("meetTitle", `Meeting ${inputValue}`);
+                }
+                localStorage.setItem("isHost", "false");
+                navigate("/meeting");
+            } catch (err) {
+                toast.error(`Error joining meet: ${err.message}`);
+            }
+        }
+
+        closeModal();
     };
 
     return (
@@ -180,10 +185,10 @@ function Home({ userId }) {
                     </p>
 
                     <div className="home-buttons">
-                        <button className="btn-join" onClick={handleJoinMeet}>
+                        <button className="btn-join" onClick={openJoinModal}>
                             Join Meet
                         </button>
-                        <button className="btn-create" onClick={handleCreateMeet}>
+                        <button className="btn-create" onClick={openCreateModal}>
                             Create Meet
                         </button>
                     </div>
@@ -193,6 +198,35 @@ function Home({ userId }) {
                     <img src="/assets/signup.png" alt="Meeting illustration" />
                 </div>
             </div>
+
+            {/* Modal */}
+            {modalType && (
+                <div className="modal-backdrop">
+                    <div className="modal-box">
+                        <h2>
+                            {modalType === "create"
+                                ? "Enter Meeting Title"
+                                : "Enter Room ID to Join"}
+                        </h2>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder={
+                                modalType === "create"
+                                    ? "e.g. Planning Meeting"
+                                    : "e.g. abc123"
+                            }
+                        />
+                        <div className="modal-buttons">
+                            <button onClick={handleModalSubmit}>
+                                {modalType === "create" ? "Create" : "Join"}
+                            </button>
+                            <button onClick={closeModal}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
