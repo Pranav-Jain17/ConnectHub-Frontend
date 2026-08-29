@@ -3,7 +3,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
     display: flex;
@@ -62,7 +62,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     z-index: -1;
 }
 
@@ -238,6 +238,27 @@
         right: 0;
         max-width: 100%;
         padding: 0;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    .modal-backdrop {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .meeting-modal-box {
+        width: 100%;
+        border-radius: 16px 16px 0 0;
+        animation: slideUp 0.3s ease-out;
+        padding-bottom: calc(18px + env(safe-area-inset-bottom));
+    }
+
+    .info-modal-wrapper {
+        bottom: 0;
+        right: 0;
+        max-width: 100%;
+        padding: 0;
+        padding-bottom: env(safe-area-inset-bottom, 20px);
     }
 
     .info-box {
@@ -245,15 +266,18 @@
         border: none;
         animation: slideUp 0.3s ease-out;
         box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+        max-height: 80dvh;
     }
 
     .confirmation-box {
         width: 100%;
-        margin: 0 10px;
+        margin: 0;
     }
 
     .confirmation-box .modal-footer {
         flex-direction: column-reverse;
+        gap: 12px;
     }
 
     .confirmation-box button {

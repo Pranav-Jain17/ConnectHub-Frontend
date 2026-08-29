@@ -9,14 +9,13 @@ body {
     width: 100%;
     min-height: 100dvh;
     background: rgb(224, 224, 239);
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .home-page {
     display: flex;
     flex-direction: column;
-    min-height: 100dvh;
+    height: 100dvh;
     background: rgb(224, 224, 239);
     padding-top: 70px;
     overflow-y: auto;
@@ -210,13 +209,15 @@ body {
 @media (max-width: 992px) {
     .home-container {
         flex-direction: column;
-        width: 90%;
+        width: 95%;
         margin: 20px auto;
+        margin-bottom: 80px;
     }
 
     .home-right {
         order: -1;
         padding: 30px;
+        max-height: 40vh;
     }
 
     .home-left {
@@ -226,6 +227,20 @@ body {
 
     .home-buttons {
         justify-content: center;
+    }
+
+    .home-right img {
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .home-left {
+        padding: 30px 20px;
+    }
+
+    .home-left h1 {
+        font-size: 2rem;
+        margin-bottom: 15px;
     }
 }
 

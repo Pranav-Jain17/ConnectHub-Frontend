@@ -151,6 +151,7 @@ function HomeModals({ type, onClose, user, actions }) {
                                             </div>
                                             <button className="btn-secondary" onClick={() => setIsPasswordExpanding(true)}>Change</button>
                                         </div>
+                                        
                                     ) : (
                                         <div className="password-form fade-in">
                                             <h4>Set New Password</h4>
