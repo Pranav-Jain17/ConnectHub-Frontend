@@ -7,18 +7,21 @@
 
 body,
 html {
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    /* FIX: Changed height to min-height and overflow to auto to stop the 'freeze' */
+    min-height: 100vh;
     background-color: #1a1a1a;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     -webkit-font-smoothing: antialiased;
 }
 
 .layout {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    width: 100vw;
+    /* FIX: min-height allows the page to grow on small screens */
+    min-height: 100vh;
+    width: 100%;
 }
 
 .navbar {
@@ -45,10 +48,9 @@ html {
     padding: 20px;
     gap: 20px;
     background: #1a1a1a;
-    overflow: hidden;
+    /* FIX: Changed height/overflow to ensure videos don't get cut off */
+    min-height: calc(100vh - 64px - 88px);
     width: 100%;
-    height: 100%;
-    height: calc(100vh - 64px - 88px);
 }
 
 .single-mode {
@@ -56,6 +58,7 @@ html {
     place-items: center;
 }
 
+/* This creates the Left-Right separation for participants */
 .split-mode {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -73,7 +76,8 @@ html {
     overflow: hidden;
     width: 100%;
     height: 100%;
-    max-width: none;
+    /* Added a min-height for mobile stacking */
+    min-height: 200px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
@@ -138,6 +142,7 @@ html {
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     position: relative;
     gap: 20px;
+    z-index: 101;
 }
 
 .meet-title-box,
@@ -306,19 +311,6 @@ input[inputmode="numeric"] {
     font-size: 20px;
 }
 
-.content-gap::-webkit-scrollbar {
-    width: 8px;
-}
-
-.content-gap::-webkit-scrollbar-track {
-    background: #1a1a1a;
-}
-
-.content-gap::-webkit-scrollbar-thumb {
-    background: #5c6168;
-    border-radius: 10px;
-}
-
 @media (max-width: 1024px) {
     .content-gap {
         padding: 15px;
@@ -337,7 +329,16 @@ input[inputmode="numeric"] {
     }
 }
 
-@media (max-width: 768px) {
+/* Tablet Media Query - Maintaining Left/Right separation */
+@media (max-width: 992px) {
+    .split-mode {
+        grid-template-columns: 1fr 1fr;
+        /* Keep side-by-side for tablets/small laptops */
+    }
+}
+
+/* Mobile Media Query - Only switch to top/bottom here */
+@media (max-width: 600px) {
     .split-mode {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr 1fr;
