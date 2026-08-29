@@ -36,14 +36,16 @@ export default function Meeting() {
     const participantsOpenRef = useRef(isParticipantsOpen);
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
+    const [isJoined, setIsJoined] = useState(false);
     const { participants } = useParticipants(roomId, socket);
 
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !roomId || !userId || !userName) return;
         
         const onConnect = () => {
             console.log("🟢 Socket connected, joining room:", roomId);
             socket.emit('join-room', roomId, userId, userName);
+            setIsJoined(true);
         };
 
         if (socket.connected) {
@@ -51,7 +53,12 @@ export default function Meeting() {
         }
 
         socket.on('connect', onConnect);
-        return () => socket.off('connect', onConnect);
+        socket.on('disconnect', () => setIsJoined(false));
+        
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect');
+        };
     }, [socket, roomId, userId, userName]);
 
     const {
@@ -63,7 +70,7 @@ export default function Meeting() {
         toggleVideo,
         localStreamRef,
         peerConnectionsRef,
-    } = useWebRTC(socket, roomId, userId, userName);
+    } = useWebRTC(socket, isJoined ? roomId : null, userId, userName);
 
     const {
         isScreenSharing,
