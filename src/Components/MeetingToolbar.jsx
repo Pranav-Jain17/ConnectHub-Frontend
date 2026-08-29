@@ -1,4 +1,4 @@
-import "./Styles/meeting-toolbar.css";
+import "./Styles/meetingToolbar.css";
 
 export default function MeetingToolbar({
     currentTime,

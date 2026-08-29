@@ -1,31 +1,6 @@
-import { useEffect, useRef } from "react";
 import "./Styles/participantsPanel.css";
 
-export default function ParticipantsPanel({ isOpen, onClose, participants = [], currentUserId, isLocalUserHost }) {
-    const onCloseRef = useRef(onClose);
-    useEffect(() => {
-        onCloseRef.current = onClose;
-    }, [onClose]);
-
-    useEffect(() => {
-        if (isOpen) {
-            window.history.pushState({ panel: "participants" }, "", window.location.href);
-            const handlePopState = (event) => {
-                event.preventDefault();
-                if (onCloseRef.current) {
-                    onCloseRef.current();
-                }
-            };
-            window.addEventListener("popstate", handlePopState);
-
-            return () => {
-                window.removeEventListener("popstate", handlePopState);
-                if (window.history.state && window.history.state.panel === "participants") {
-                    window.history.back();
-                }
-            };
-        }
-    }, [isOpen]);
+export default function ParticipantsPanel({ isOpen, onClose, participants = [], currentUserId, hostUserId }) {
 
     const isCurrentUser = (participantId) => {
         return String(participantId) === String(currentUserId);
@@ -36,7 +11,6 @@ export default function ParticipantsPanel({ isOpen, onClose, participants = [], 
             <div className="participants-panel-backdrop" onClick={onClose} />
 
             <div className="participants-panel">
-
                 <div className="participants-panel-header">
                     <h3>Participants ({participants?.length || 0})</h3>
                     <button className="participants-close-btn" onClick={onClose}>✕</button>
@@ -51,9 +25,7 @@ export default function ParticipantsPanel({ isOpen, onClose, participants = [], 
                                 if (!user) return null;
 
                                 const isMe = isCurrentUser(user._id);
-                                const amITheHost = isMe && isLocalUserHost;
-                                const isRemoteHost = user.isHost === true || user.role === 'host';
-                                const showHostBadge = amITheHost || isRemoteHost;
+                                const isHost = String(user._id) === String(hostUserId);
 
                                 return (
                                     <div key={user._id} className="participant-item">
@@ -63,9 +35,11 @@ export default function ParticipantsPanel({ isOpen, onClose, participants = [], 
                                         <div className="participant-info">
                                             <span className="participant-name">
                                                 {user.username || "Unknown User"}
-                                                {isMe && " (You)"}
-                                                {showHostBadge && (
-                                                    <span className="host-badge"> (Host)</span>
+                                                {isMe && <span style={{ color: "gray" }}> (You)</span>}
+                                                {isHost && (
+                                                    <span className="host-badge" style={{ color: "red", fontWeight: "bold", marginLeft: "5px" }}>
+                                                        (Host)
+                                                    </span>
                                                 )}
                                             </span>
                                         </div>

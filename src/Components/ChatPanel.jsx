@@ -2,34 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import "./Styles/chatPanel.css";
 
 export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, userName }) {
-
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const messagesEndRef = useRef(null);
-    const onCloseRef = useRef(onClose);
-
-    useEffect(() => {
-        onCloseRef.current = onClose;
-    }, [onClose]);
-
-    useEffect(() => {
-        if (isOpen) {
-            window.history.pushState({ panel: "chat" }, "", window.location.href);
-            const handlePopState = (event) => {
-                event.preventDefault();
-                if (onCloseRef.current) {
-                    onCloseRef.current();
-                }
-            };
-            window.addEventListener("popstate", handlePopState);
-            return () => {
-                window.removeEventListener("popstate", handlePopState);
-                if (window.history.state && window.history.state.panel === "chat") {
-                    window.history.back();
-                }
-            };
-        }
-    }, [isOpen]);
 
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -38,12 +13,8 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
     }, [messages, isOpen]);
 
     useEffect(() => {
-        if (!isOpen) {
-            return;
-        }
-        if (!roomId) {
-            return;
-        }
+        if (!isOpen) return;
+        if (!roomId) return;
 
         async function loadHistory() {
             try {
@@ -69,9 +40,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
     }, [isOpen, roomId]);
 
     useEffect(() => {
-        if (!socket) {
-            return;
-        }
+        if (!socket) return;
         const handleReceive = (msg) => {
             setMessages(prev => [...prev, msg]);
         };
@@ -83,13 +52,8 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
     const sendMessage = () => {
         const trimmed = text.trim();
-        if (!trimmed) {
-            return;
-        }
-
-        if (!socket || !roomId) {
-            return;
-        }
+        if (!trimmed) return;
+        if (!socket || !roomId) return;
 
         const payload = {
             roomId,
@@ -104,35 +68,18 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
     return (
         <div className={`chat-panel-wrapper ${isOpen ? "open" : ""}`}>
-            <div
-                className="chat-panel-backdrop"
-                onClick={() => {
-                    onClose();
-                }}
-            />
-
+            <div className="chat-panel-backdrop" onClick={onClose} />
             <div className="chat-panel">
                 <div className="chat-panel-header">
                     <h3>Meeting Chat</h3>
-                    <button
-                        className="chat-close-btn"
-                        onClick={() => {
-                            onClose();
-                        }}
-                    >
-                        ✕
-                    </button>
+                    <button className="chat-close-btn" onClick={onClose}>✕</button>
                 </div>
 
                 <div className="chat-panel-body">
                     {messages.map((msg) => {
                         const isMe = msg.senderId === userId;
-
                         return (
-                            <div
-                                key={msg._id || Math.random()}
-                                className={`chat-message-row ${isMe ? "me" : "other"}`}
-                            >
+                            <div key={msg._id || Math.random()} className={`chat-message-row ${isMe ? "me" : "other"}`}>
                                 <div className="chat-message-meta">
                                     <span className="chat-sender">
                                         {isMe ? "You" : msg.senderName}
@@ -142,7 +89,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                             </div>
                         );
                     })}
-
                     <div ref={messagesEndRef} />
                 </div>
 
@@ -150,9 +96,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                     <textarea
                         className="chat-input"
                         value={text}
-                        onChange={(e) => {
-                            setText(e.target.value);
-                        }}
+                        onChange={(e) => setText(e.target.value)}
                         placeholder="Type a message..."
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
@@ -161,15 +105,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                             }
                         }}
                     />
-
-                    <button
-                        className="chat-send-btn"
-                        onClick={() => {
-                            sendMessage();
-                        }}
-                    >
-                        Send
-                    </button>
+                    <button className="chat-send-btn" onClick={sendMessage}>Send</button>
                 </div>
             </div>
         </div>
