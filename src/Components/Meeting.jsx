@@ -30,7 +30,7 @@ export default function Meeting() {
     const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
     const [currentTime, setCurrentTime] = useState("");
-    const [isRejoining, setIsRejoining] = useState(true); // ✅ loading state for refresh
+    const [isRejoining, setIsRejoining] = useState(false); // ✅ loading state for refresh
     const localVideoRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -412,7 +412,7 @@ export default function Meeting() {
     };
 
     // ✅ Show a loading screen while rejoining instead of flashing /home
-    if (isRejoining) {
+    if (isRejoining && !livekitToken) {
         return (
             <div className="layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <p style={{ color: '#fff', fontSize: '1.2rem' }}>Rejoining meeting...</p>
