@@ -78,38 +78,57 @@ export default function VideoGrid({
     }
 
     // ✅ Normal grid mode — auto layout based on participant count
-    const totalCount = 1 + cameraFeeds.length; // local + remote cameras
-    const gridClass = getGridClass(totalCount);
+    const allParticipants = [
+        { isLocal: true },
+        ...cameraFeeds.map(t => ({ isLocal: false, trackInfo: t }))
+    ];
+
+    const chunks = [];
+    for (let i = 0; i < allParticipants.length; i += 4) {
+        chunks.push(allParticipants.slice(i, i + 4));
+    }
 
     return (
-        <main className={`content-gap video-grid ${gridClass}`}>
-            {/* Local user */}
-            <div className="video-container">
-                <video
-                    ref={localVideoRef}
-                    autoPlay
-                    muted
-                    playsInline
-                    className="local-video"
-                />
-                <span className="video-label">
-                    <img
-                        src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-                        alt=""
-                    />
-                    {userName} {isHost && "(Host)"}
-                </span>
-            </div>
-
-            {/* Remote camera feeds */}
-            {cameraFeeds.map((t) => (
-                <RemoteVideo
-                    key={t.participant?.sid}
-                    stream={t.stream}
-                    isMicOn={peerMicState[t.participant?.identity]}
-                    name={participantNameMap[t.participant?.identity] || (t.participantName !== 'Anonymous' && t.participantName) || "Remote User"}
-                />
-            ))}
+        <main className="content-gap video-pagination-container">
+            {chunks.map((chunk, chunkIndex) => {
+                const gridClass = getGridClass(chunk.length);
+                return (
+                    <section key={chunkIndex} className={`video-page ${gridClass}`}>
+                        {chunk.map((p, index) => {
+                            if (p.isLocal) {
+                                return (
+                                    <div className="video-container" key="local">
+                                        <video
+                                            ref={localVideoRef}
+                                            autoPlay
+                                            muted
+                                            playsInline
+                                            className="local-video"
+                                        />
+                                        <span className="video-label">
+                                            <img
+                                                src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
+                                                alt=""
+                                            />
+                                            {userName} {isHost && "(Host)"}
+                                        </span>
+                                    </div>
+                                );
+                            } else {
+                                const t = p.trackInfo;
+                                return (
+                                    <RemoteVideo
+                                        key={t.participant?.sid}
+                                        stream={t.stream}
+                                        isMicOn={peerMicState[t.participant?.identity]}
+                                        name={participantNameMap[t.participant?.identity] || (t.participantName !== 'Anonymous' && t.participantName) || "Remote User"}
+                                    />
+                                );
+                            }
+                        })}
+                    </section>
+                );
+            })}
         </main>
     );
 }
@@ -119,8 +138,7 @@ function getGridClass(count) {
     if (count === 1) return "grid-1";
     if (count === 2) return "grid-2";
     if (count === 3) return "grid-3";
-    if (count === 4) return "grid-4";
-    return "grid-many"; // 5+
+    return "grid-4";
 }
 
 // ✅ Big screen share view
