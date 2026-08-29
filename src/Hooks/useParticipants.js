@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { getLoginToken } from "../utils/auth";
 
 export const useParticipants = (roomId, socket) => {
 
@@ -7,7 +8,7 @@ export const useParticipants = (roomId, socket) => {
     const fetchParticipants = useCallback(async () => {
         if (!roomId) return;
         try {
-            const token = localStorage.getItem("loginToken");
+            const token = getLoginToken();
             const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/participants`, {
                 method: "GET",
                 headers: {
