@@ -15,7 +15,12 @@ export default function Report() {
         if (socket && !socket.connected) {
             socket.connect();
         }
-    }, [socket]);
+        
+        if (socket && meetingId) {
+            console.log(`Joining report notification room: ${meetingId}`);
+            socket.emit("join-room", meetingId, localStorage.getItem("userId"), localStorage.getItem("userName"));
+        }
+    }, [socket, meetingId]);
 
     const fetchReport = useCallback(async (isSilent = false) => {
         try {
@@ -39,7 +44,7 @@ export default function Report() {
             }
 
             const data = await res.json();
-            console.log("Report data fetched:", data.reportStatus);
+            console.log("Current report status:", data.reportStatus);
             setReport(data);
         } catch (err) {
             console.error("Fetch report error:", err);
@@ -54,6 +59,7 @@ export default function Report() {
         fetchReport();
     }, [fetchReport]);
 
+    // Layer 1: Socket Listener (Instant)
     useEffect(() => {
         if (!socket) return;
 
@@ -61,7 +67,7 @@ export default function Report() {
             console.log("Socket event 'report-ready' received:", data);
             if (data.meetingId === meetingId) {
                 toast.success("AI report is ready!");
-                fetchReport(true); // Silent fetch to update data
+                fetchReport(true); 
             }
         };
 
@@ -71,6 +77,25 @@ export default function Report() {
             socket.off("report-ready", handleReportReady);
         };
     }, [socket, meetingId, fetchReport]);
+
+    // Layer 2: Polling Fallback (Every 5 seconds if still processing)
+    useEffect(() => {
+        let intervalId;
+
+        if (report && report.reportStatus === 'processing') {
+            console.log("Starting polling for report completion...");
+            intervalId = setInterval(() => {
+                fetchReport(true);
+            }, 5000);
+        }
+
+        return () => {
+            if (intervalId) {
+                console.log("Stopping polling.");
+                clearInterval(intervalId);
+            }
+        };
+    }, [report, fetchReport]);
 
     if (loading) {
         return <div className="report-container">Loading report...</div>;
