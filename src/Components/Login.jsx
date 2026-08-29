@@ -23,7 +23,8 @@ function Login() {
         }
 
         try {
-            const response = await fetch('https://connecthub-2.onrender.com/auth/login', {
+            // const response = await fetch('https://connecthub-2.onrender.com/auth/login', {
+            const response = await fetch('http://localhost:3000/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -33,7 +34,7 @@ function Login() {
             });
 
             if (!response.ok) {
-                throw new Error(`Status: ${response.status}`);
+                throw new Error(Status: ${ response.status });
             }
 
             const data = await response.json();
@@ -43,6 +44,7 @@ function Login() {
                 sessionStorage.setItem('loginToken', loginToken);
             }
             localStorage.setItem('loginToken', loginToken);
+            localStorage.setItem('userId', data.userId);
             navigate('/home');
         } catch (err) {
             setError('! Enter a valid email/username or password');
