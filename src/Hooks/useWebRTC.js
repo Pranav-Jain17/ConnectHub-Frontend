@@ -18,13 +18,12 @@ export const useWebRTC = (livekitUrl, token) => {
             setRoom(room);
 
             room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-                if (track.kind === 'video' || track.kind === 'audio') {
-                    const stream = track.attach();
+                if (track.kind === 'video') {
+                    const mediaStream = new MediaStream([track.mediaStreamTrack]);
                     setRemoteStreams(prev => {
                         const next = new Map(prev);
-                        // Use track.sid as the key to allow multiple tracks per participant
                         next.set(track.sid, { 
-                            stream, 
+                            stream: mediaStream, 
                             participant, 
                             isScreenShare: track.source === 'screen_share',
                             kind: track.kind
@@ -32,26 +31,43 @@ export const useWebRTC = (livekitUrl, token) => {
                         return next;
                     });
                 }
+
+                if (track.kind === 'audio') {
+                    const audioEl = track.attach();
+                    audioEl.style.display = 'none';
+                    document.body.appendChild(audioEl);
+                }
             });
 
             room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
-                setRemoteStreams(prev => {
-                    const next = new Map(prev);
-                    next.delete(track.sid);
-                    return next;
-                });
+                if (track.kind === 'video') {
+                    setRemoteStreams(prev => {
+                        const next = new Map(prev);
+                        next.delete(track.sid);
+                        return next;
+                    });
+                }
+
+                if (track.kind === 'audio') {
+                    track.detach().forEach(el => el.remove());
+                }
             });
 
             room.on(RoomEvent.ParticipantDisconnected, (participant) => {
                 setRemoteStreams(prev => {
                     const next = new Map(prev);
-                    // Remove all tracks belonging to the disconnected participant
                     for (const [sid, data] of next.entries()) {
                         if (data.participant.identity === participant.identity) {
                             next.delete(sid);
                         }
                     }
                     return next;
+                });
+
+                participant.audioTrackPublications.forEach(pub => {
+                    if (pub.track) {
+                        pub.track.detach().forEach(el => el.remove());
+                    }
                 });
             });
 
