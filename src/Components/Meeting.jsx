@@ -1,10 +1,9 @@
 import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./Styles/meeting.css";
 import { useSocket } from "../Providers/Socket";
 import { useWebRTC } from "../Hooks/useWebRTC";
-// import useScreenShare from "../Hooks/useScreenShare";
 import { useParticipants } from "../Hooks/useParticipants";
 import ChatPanel from "./ChatPanel";
 import ParticipantsPanel from "./ParticipantsPanel";
@@ -14,8 +13,8 @@ import { InfoModal, ConfirmationModal } from "./MeetingModals";
 
 export default function Meeting() {
     const navigate = useNavigate();
+    const { roomId } = useParams(); // ✅ roomId from URL, survives refresh
     const { socket } = useSocket();
-    const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
     const [livekitUrl, setLivekitUrl] = useState("");
     const [livekitToken, setLivekitToken] = useState("");
@@ -31,6 +30,7 @@ export default function Meeting() {
     const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
     const [currentTime, setCurrentTime] = useState("");
+    const [isRejoining, setIsRejoining] = useState(true); // ✅ loading state for refresh
     const localVideoRef = useRef(null);
     const mediaRecorderRef = useRef(null);
     const audioChunksRef = useRef([]);
@@ -101,41 +101,63 @@ export default function Meeting() {
         nameMapRef.current = participantNameMap;
     }, [participantNameMap]);
 
+    // ✅ Initialize meeting using roomId from URL — works on refresh, tab duplicate, shared link
     useEffect(() => {
         const initializeMeeting = async () => {
-            const storedRoomId = localStorage.getItem("roomId");
-            const storedUserId = localStorage.getItem("userId");
-
-            if (!storedRoomId || !storedUserId) {
-                toast.error("No active meeting session found.");
+            // roomId comes from URL param, not localStorage
+            if (!roomId) {
+                toast.error("Invalid meeting link.");
                 navigate("/home", { replace: true });
                 return;
             }
 
+            const storedUserId = localStorage.getItem("userId");
+            if (!storedUserId) {
+                // Not logged in — redirect to login, then come back
+                toast.error("Please log in to join this meeting.");
+                navigate("/login", { replace: true });
+                return;
+            }
+
             try {
-                const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${storedUserId}/join`, 'POST', { roomId: storedRoomId });
+                setIsRejoining(true);
+
+                // ✅ roomId in URL, used directly in API call
+                const joinData = await apiRequest(
+                    `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/join`,
+                    'POST',
+                    { roomId }
+                );
 
                 if (typeof joinData.token !== 'string' || !joinData.token) {
-                    toast.error("Failed to retrieve a valid meeting token. Please try joining again.");
+                    toast.error("Failed to retrieve a valid meeting token.");
                     navigate("/home", { replace: true });
                     return;
                 }
-                
+
                 const LIVEKIT_URL = "wss://connecthub-7c2knk6r.livekit.cloud";
-                setRoomId(storedRoomId);
                 setUserId(storedUserId);
                 setLivekitUrl(joinData.livekitUrl || LIVEKIT_URL);
                 setLivekitToken(joinData.token);
-                setIsHost(localStorage.getItem("isHost") === "true");
+                setIsHost(joinData.meeting?.host_id === storedUserId);
+
+                // ✅ Sync localStorage so other parts of app stay consistent
+                localStorage.setItem("roomId", roomId);
+                localStorage.setItem("isHost", String(joinData.meeting?.host_id === storedUserId));
+                if (joinData.meeting?.title) {
+                    localStorage.setItem("meetTitle", joinData.meeting.title);
+                }
 
             } catch (error) {
-                toast.error(`Failed to rejoin meeting: ${error.message}`);
+                toast.error(`Could not join meeting: ${error.message}`);
                 navigate("/home", { replace: true });
+            } finally {
+                setIsRejoining(false);
             }
         };
 
         initializeMeeting();
-    }, [navigate]);
+    }, [roomId]); // ✅ re-runs if roomId in URL changes
 
     useEffect(() => {
         if (!roomId) return;
@@ -194,7 +216,7 @@ export default function Meeting() {
                     const formData = new FormData();
                     formData.append('audio', audioBlob, 'meeting.webm');
                     formData.append('meetingId', roomId);
-                    audioChunksRef.current = []; 
+                    audioChunksRef.current = [];
 
                     try {
                         const token = localStorage.getItem("loginToken");
@@ -219,7 +241,6 @@ export default function Meeting() {
                         });
 
                         socket?.disconnect();
-
                         clearMeetingStorage();
                         navigate(`/report/${roomId}`, { replace: true });
 
@@ -336,7 +357,7 @@ export default function Meeting() {
         localStorage.removeItem("isHost");
         localStorage.removeItem("livekitUrl");
         localStorage.removeItem("livekitToken");
-        window.history.replaceState(null, "", "/home");
+        // ✅ Don't replaceState here — let navigate() handle routing
     };
 
     const leaveMeeting = async () => {
@@ -348,7 +369,7 @@ export default function Meeting() {
 
         socket?.disconnect();
 
-        const currentRoomId = roomId;
+        const currentRoomId = roomId; // already from useParams, safe to use
         const token = localStorage.getItem("loginToken");
 
         clearMeetingStorage();
@@ -390,6 +411,15 @@ export default function Meeting() {
         }
     };
 
+    // ✅ Show a loading screen while rejoining instead of flashing /home
+    if (isRejoining) {
+        return (
+            <div className="layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <p style={{ color: '#fff', fontSize: '1.2rem' }}>Rejoining meeting...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="layout">
             <header className="navbar">
@@ -426,6 +456,7 @@ export default function Meeting() {
                 setShowMoreMenu={setShowMoreMenu}
                 handleMobileAction={handleMobileAction}
             />
+
             <ChatPanel
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}

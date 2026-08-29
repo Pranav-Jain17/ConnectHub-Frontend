@@ -77,7 +77,7 @@ function Home() {
             }
 
             const userId = localStorage.getItem("userId");
-            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
+            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/join`, 'POST', { roomId });
 
             console.log("Response from server:", joinData);
             const { token, livekitUrl } = joinData;
@@ -93,7 +93,7 @@ function Home() {
             localStorage.setItem("livekitToken", token);
             localStorage.setItem("livekitUrl", livekitUrl || LIVEKIT_URL);
             
-            navigate("/meeting");
+           navigate(`/meeting/${roomId}`);
             setModalType(null);
         } catch (err) {
             toast.error(`Error: ${err.message}`);
@@ -107,7 +107,7 @@ function Home() {
                 toast.error("User session missing.");
                 return;
             }
-            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
+            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/join`, 'POST', { roomId });
             
             console.log("Response from server:", joinData);
             const { token, livekitUrl } = joinData;
@@ -122,7 +122,7 @@ function Home() {
             localStorage.setItem("isHost", "false");
             localStorage.setItem("livekitToken", token);
             localStorage.setItem("livekitUrl", livekitUrl || LIVEKIT_URL);
-            navigate("/meeting");
+            navigate(`/meeting/${roomId}`);
             setModalType(null);
         } catch (err) {
             toast.error(`Error: ${err.message}`);
