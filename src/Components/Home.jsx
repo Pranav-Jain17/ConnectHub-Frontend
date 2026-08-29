@@ -241,11 +241,4 @@ function Home() {
     );
 }
 
-export default Home;d
-                }}
-            />
-        </div>
-    );
-}
-
 export default Home;
