@@ -1,31 +1,76 @@
-.single-mode {
-    grid-template-columns: 1fr;
-    place-items: center;
+/* ─── Base content area ─────────────────────────────── */
+.content-gap {
+    flex: 1;
+    padding: 16px;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
-.split-mode {
+/* ─── Normal Grid Mode ──────────────────────────────── */
+.video-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
-    gap: 20px;
+    gap: 12px;
     width: 100%;
     height: 100%;
     align-items: stretch;
 }
 
+/* 1 person — centered, large */
+.grid-1 {
+    grid-template-columns: 1fr;
+    place-items: center;
+}
+
+.grid-1 .video-container {
+    max-width: 800px;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+}
+
+/* 2 people — side by side */
+.grid-2 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+/* 3 people — two on top, one centered below */
+.grid-3 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+.grid-3 .video-container:last-child {
+    grid-column: 1 / -1;
+    max-width: 50%;
+    margin: 0 auto;
+}
+
+/* 4 people — 2x2 */
+.grid-4 {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+}
+
+/* 5+ people — 3 columns, auto rows */
+.grid-many {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 1fr;
+}
+
+/* ─── Video Container ───────────────────────────────── */
 .video-container {
     position: relative;
-    background: #000;
-    border-radius: 20px;
+    background: #1a1a2e;
+    border-radius: 16px;
     overflow: hidden;
     width: 100%;
     height: 100%;
-    min-height: 200px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-height: 180px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.3s ease;
 }
 
 .local-video,
@@ -37,43 +82,199 @@
 }
 
 .local-video {
-    transform: scaleX(-1);
+    transform: scaleX(-1); /* mirror local */
 }
 
+/* ─── Video Label ───────────────────────────────────── */
 .video-label {
     position: absolute;
-    bottom: 15px;
-    left: 15px;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(10px);
-    color: white;
-    padding: 8px 16px;
-    border-radius: 10px;
-    font-size: 14px;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 500;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     z-index: 10;
 }
 
-@media (min-width: 1025px) {
-    .split-mode {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr;
-    }
+.video-label img {
+    width: 14px;
+    height: 14px;
+    opacity: 0.9;
 }
 
-@media (max-width: 1024px) {
-    .split-mode {
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr;
-    }
+/* ─── Presentation / Screen Share Mode ─────────────── */
+.presentation-mode {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
 }
 
-@media (max-width: 1024px) and (orientation: portrait) {
-    .split-mode {
+/* Big stage — takes up most of the width */
+.presentation-stage {
+    flex: 1 1 75%;
+    min-width: 0;
+    height: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.screen-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: #0d0d1a;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+}
+
+.screen-video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* contain so screen share isn't cropped */
+    background: #000;
+}
+
+/* ─── Participants Sidebar ──────────────────────────── */
+.participants-sidebar {
+    flex: 0 0 220px;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-right: 4px;
+}
+
+/* Thin scrollbar */
+.sidebar-scroll-area::-webkit-scrollbar {
+    width: 4px;
+}
+.sidebar-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+.sidebar-scroll-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.sidebar-item {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #1a1a2e;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: #000;
+}
+
+.local-sidebar-video {
+    transform: scaleX(-1); /* mirror local in sidebar too */
+}
+
+.sidebar-label {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+}
+
+.sidebar-label img {
+    width: 12px;
+    height: 12px;
+    opacity: 0.85;
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+
+/* Tablet portrait — stack grid to single column */
+@media (max-width: 768px) {
+    .grid-2,
+    .grid-3,
+    .grid-4,
+    .grid-many {
         grid-template-columns: 1fr;
-        grid-template-rows: 1fr 1fr;
+        grid-auto-rows: auto;
+    }
+
+    .grid-3 .video-container:last-child {
+        grid-column: unset;
+        max-width: 100%;
+    }
+
+    /* Screen share — stack vertically on mobile */
+    .presentation-mode {
+        flex-direction: column;
+    }
+
+    .presentation-stage {
+        flex: 0 0 55%;
+    }
+
+    .participants-sidebar {
+        flex: 1 1 auto;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: auto;
+    }
+
+    .sidebar-scroll-area {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-right: 0;
+        padding-bottom: 4px;
+    }
+
+    .sidebar-item {
+        width: 140px;
+        flex-shrink: 0;
+        aspect-ratio: 16 / 9;
+    }
+}
+
+/* Large screens — wider sidebar */
+@media (min-width: 1400px) {
+    .participants-sidebar {
+        flex: 0 0 260px;
     }
 }

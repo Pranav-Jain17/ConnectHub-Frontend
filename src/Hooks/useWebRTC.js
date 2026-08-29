@@ -18,23 +18,40 @@ export const useWebRTC = (livekitUrl, token) => {
             setRoom(room);
 
             room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
-                const stream = track.attach();
-                setRemoteStreams(prev => new Map(prev).set(participant.identity, { stream, participant }));
+                if (track.kind === 'video' || track.kind === 'audio') {
+                    const stream = track.attach();
+                    setRemoteStreams(prev => {
+                        const next = new Map(prev);
+                        // Use track.sid as the key to allow multiple tracks per participant
+                        next.set(track.sid, { 
+                            stream, 
+                            participant, 
+                            isScreenShare: track.source === 'screen_share',
+                            kind: track.kind
+                        });
+                        return next;
+                    });
+                }
             });
 
             room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
                 setRemoteStreams(prev => {
-                    const newStreams = new Map(prev);
-                    newStreams.delete(participant.identity);
-                    return newStreams;
+                    const next = new Map(prev);
+                    next.delete(track.sid);
+                    return next;
                 });
             });
 
             room.on(RoomEvent.ParticipantDisconnected, (participant) => {
                 setRemoteStreams(prev => {
-                    const newStreams = new Map(prev);
-                    newStreams.delete(participant.identity);
-                    return newStreams;
+                    const next = new Map(prev);
+                    // Remove all tracks belonging to the disconnected participant
+                    for (const [sid, data] of next.entries()) {
+                        if (data.participant.identity === participant.identity) {
+                            next.delete(sid);
+                        }
+                    }
+                    return next;
                 });
             });
 
