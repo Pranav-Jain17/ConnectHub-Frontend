@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo, useLayoutEffect } from "react";
+import { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./Styles/meeting.css";
@@ -13,7 +13,7 @@ import { InfoModal, ConfirmationModal } from "./MeetingModals";
 
 export default function Meeting() {
     const navigate = useNavigate();
-    const { roomId } = useParams(); // ✅ roomId from URL, survives refresh
+    const { roomId } = useParams();
     const { socket } = useSocket();
     const [userId, setUserId] = useState("");
     const [livekitUrl, setLivekitUrl] = useState("");
@@ -30,14 +30,16 @@ export default function Meeting() {
     const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
     const [currentTime, setCurrentTime] = useState("");
-    const [isRejoining, setIsRejoining] = useState(false); // ✅ loading state for refresh
+    const [isRejoining, setIsRejoining] = useState(false);
+
     const localVideoRef = useRef(null);
     const mediaRecorderRef = useRef(null);
-    const audioChunksRef = useRef([]);
+    const chunkIntervalRef = useRef(null);       // ✅ chunk timer
     const isExitingRef = useRef(false);
     const nameMapRef = useRef({});
     const chatOpenRef = useRef(isChatOpen);
     const participantsOpenRef = useRef(isParticipantsOpen);
+
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
     const { participants } = useParticipants(roomId, socket);
@@ -50,18 +52,14 @@ export default function Meeting() {
         };
         const config = { method, headers };
         if (body) config.body = JSON.stringify(body);
-
         const response = await fetch(url, config);
         const data = await response.json();
-
         if (!response.ok) throw new Error(data.message || data.error || `Status: ${response.status}`);
         return data;
     };
 
     useEffect(() => {
-        if (socket && !socket.connected) {
-            socket.connect();
-        }
+        if (socket && !socket.connected) socket.connect();
     }, [socket]);
 
     const {
@@ -82,29 +80,18 @@ export default function Meeting() {
             map[p._id] = p.username || "Unknown User";
         });
         Object.values(remoteStreams).forEach(({ participant }) => {
-            if (participant) {
-                map[participant.identity] = participant.identity;
-            }
+            if (participant) map[participant.identity] = participant.identity;
         });
         return map;
     }, [participants, remoteStreams]);
 
-    useLayoutEffect(() => {
-        chatOpenRef.current = isChatOpen;
-    }, [isChatOpen]);
+    useLayoutEffect(() => { chatOpenRef.current = isChatOpen; }, [isChatOpen]);
+    useLayoutEffect(() => { participantsOpenRef.current = isParticipantsOpen; }, [isParticipantsOpen]);
+    useEffect(() => { nameMapRef.current = participantNameMap; }, [participantNameMap]);
 
-    useLayoutEffect(() => {
-        participantsOpenRef.current = isParticipantsOpen;
-    }, [isParticipantsOpen]);
-
-    useEffect(() => {
-        nameMapRef.current = participantNameMap;
-    }, [participantNameMap]);
-
-    // ✅ Initialize meeting using roomId from URL — works on refresh, tab duplicate, shared link
+    // ✅ Initialize meeting — roomId from URL, works on refresh
     useEffect(() => {
         const initializeMeeting = async () => {
-            // roomId comes from URL param, not localStorage
             if (!roomId) {
                 toast.error("Invalid meeting link.");
                 navigate("/home", { replace: true });
@@ -113,7 +100,6 @@ export default function Meeting() {
 
             const storedUserId = localStorage.getItem("userId");
             if (!storedUserId) {
-                // Not logged in — redirect to login, then come back
                 toast.error("Please log in to join this meeting.");
                 navigate("/login", { replace: true });
                 return;
@@ -122,7 +108,6 @@ export default function Meeting() {
             try {
                 setIsRejoining(true);
 
-                // ✅ roomId in URL, used directly in API call
                 const joinData = await apiRequest(
                     `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/join`,
                     'POST',
@@ -141,7 +126,6 @@ export default function Meeting() {
                 setLivekitToken(joinData.token);
                 setIsHost(joinData.meeting?.host_id === storedUserId);
 
-                // ✅ Sync localStorage so other parts of app stay consistent
                 localStorage.setItem("roomId", roomId);
                 localStorage.setItem("isHost", String(joinData.meeting?.host_id === storedUserId));
                 if (joinData.meeting?.title) {
@@ -157,108 +141,181 @@ export default function Meeting() {
         };
 
         initializeMeeting();
-    }, [roomId]); // ✅ re-runs if roomId in URL changes
+    }, [roomId]);
 
     useEffect(() => {
         if (!roomId) return;
-
         const fetchHostInfo = async () => {
             try {
                 const token = localStorage.getItem("loginToken");
-                const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/participants`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const res = await fetch(
+                    `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/participants`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
                 const data = await res.json();
-
-                if (data.hostUserId) {
-                    setHostUserId(data.hostUserId);
-                }
+                if (data.hostUserId) setHostUserId(data.hostUserId);
             } catch (error) {
                 console.error("Failed to fetch host info:", error);
             }
         };
-
         fetchHostInfo();
     }, [roomId]);
 
+    // ✅ Finalize meeting — defined outside useEffect so endMeeting can call it too
+    const finalizeMeetingEnd = useCallback(async () => {
+        console.log("🏁 Calling /end...");
+        const token = localStorage.getItem("loginToken");
+        try {
+            const res = await fetch('https://connecthub.dikshant-ahalawat.live/meetings/end', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ meetingId: roomId }),
+            });
+
+            if (res.ok) {
+                toast.success("Meeting ended. AI is generating your report...");
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                toast.error(`Could not end meeting: ${errData.error || res.statusText}`);
+            }
+        } catch (err) {
+            console.error("❌ Failed to call /end:", err.message);
+            toast.error("Could not finalize meeting report.");
+        }
+
+        socket?.disconnect();
+        clearMeetingStorage();
+        navigate(`/report/${roomId}`, { replace: true });
+    }, [roomId, socket, navigate]);
+
+    // ✅ Chunked recording — 30s intervals, upload each chunk independently
     useEffect(() => {
-        if (!localStreamReady) return;
+        if (!localStreamReady || !localStream || !isHost || !roomId) return;
+
+        // Set local video
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
         }
 
-        if (isHost && localStream) {
-            const audioTracks = localStream.getAudioTracks();
-            if (audioTracks.length === 0) {
-                console.warn("No audio tracks found to record.");
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length === 0) {
+            console.warn("⚠️ No audio tracks found to record.");
+            return;
+        }
+
+        const audioStream = new MediaStream(audioTracks);
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+            ? 'audio/webm;codecs=opus'
+            : MediaRecorder.isTypeSupported('audio/webm')
+            ? 'audio/webm'
+            : '';
+        const options = mimeType ? { mimeType } : {};
+
+        let chunkIndex = 0;
+        let chunkBuffer = [];
+        const CHUNK_INTERVAL_MS = 30_000;
+
+        const uploadChunk = async (blob, index) => {
+            if (!blob || blob.size === 0) {
+                console.warn(`⚠️ Chunk ${index} is empty, skipping.`);
                 return;
             }
 
-            const audioStream = new MediaStream(audioTracks);
-            const options = { mimeType: 'audio/webm' };
+            const formData = new FormData();
+            formData.append('audio', blob, `chunk-${index}.webm`);
+            formData.append('meetingId', roomId);
+            formData.append('chunkIndex', String(index));
 
-            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                console.warn(`${options.mimeType} is not supported. Falling back to default.`);
-                delete options.mimeType;
-            }
-
+            const token = localStorage.getItem("loginToken");
             try {
-                mediaRecorderRef.current = new MediaRecorder(audioStream, options);
+                const res = await fetch('https://connecthub.dikshant-ahalawat.live/meetings/chunk', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                });
 
-                mediaRecorderRef.current.ondataavailable = (event) => {
-                    if (event.data.size > 0) {
-                        audioChunksRef.current.push(event.data);
-                    }
-                };
-
-                mediaRecorderRef.current.onstop = async () => {
-                    const audioBlob = new Blob(audioChunksRef.current, { type: options.mimeType || 'audio/webm' });
-                    const formData = new FormData();
-                    formData.append('audio', audioBlob, 'meeting.webm');
-                    formData.append('meetingId', roomId);
-                    audioChunksRef.current = [];
-
-                    try {
-                        const token = localStorage.getItem("loginToken");
-                        toast.info("Uploading audio for report...");
-
-                        fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
-                            method: 'POST',
-                            headers: {
-                                Authorization: `Bearer ${token}`,
-                            },
-                            body: formData,
-                        }).then(async (res) => {
-                            if (res.ok) {
-                                toast.success("Upload complete. AI is processing...");
-                            } else {
-                                const errData = await res.json().catch(() => ({ message: "Unknown server error" }));
-                                toast.error(`Error: ${errData.message || res.statusText}`);
-                            }
-                        }).catch((error) => {
-                            console.error('Failed to upload audio:', error);
-                            toast.error('Could not save meeting report.');
-                        });
-
-                        socket?.disconnect();
-                        clearMeetingStorage();
-                        navigate(`/report/${roomId}`, { replace: true });
-
-                    } catch (error) {
-                        console.error('Failed to upload audio:', error);
-                        toast.error('Could not save meeting report. Check console for details.');
-                    } finally {
-                        console.log("Upload fetch process finished.");
-                    }
-                };
-
-                mediaRecorderRef.current.start();
-            } catch (error) {
-                console.error("Error starting MediaRecorder:", error);
-                toast.error("Could not start recording. Meeting reports will be unavailable.");
+                if (res.ok) {
+                    console.log(`✅ Chunk ${index} uploaded`);
+                } else {
+                    const errData = await res.json().catch(() => ({}));
+                    console.error(`❌ Chunk ${index} upload failed:`, errData.error || res.statusText);
+                }
+            } catch (err) {
+                // Non-fatal — meeting continues, this chunk will be re-transcribed via fallback
+                console.error(`❌ Chunk ${index} network error:`, err.message);
             }
+        };
+
+        const scheduleNextStop = () => {
+            chunkIntervalRef.current = setTimeout(() => {
+                if (mediaRecorderRef.current?.state === 'recording') {
+                    mediaRecorderRef.current.stop();
+                }
+            }, CHUNK_INTERVAL_MS);
+        };
+
+        try {
+            mediaRecorderRef.current = new MediaRecorder(audioStream, options);
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                if (event.data?.size > 0) {
+                    chunkBuffer.push(event.data);
+                }
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                // Snapshot and clear buffer immediately
+                const buffered = [...chunkBuffer];
+                chunkBuffer = [];
+
+                if (buffered.length > 0) {
+                    const blob = new Blob(buffered, { type: mimeType || 'audio/webm' });
+                    const currentIndex = chunkIndex++;
+                    // Fire upload without blocking onstop
+                    uploadChunk(blob, currentIndex).catch(err =>
+                        console.error(`❌ Upload error for chunk ${currentIndex}:`, err)
+                    );
+                }
+
+                if (isExitingRef.current) {
+                    // ✅ Meeting ending — wait briefly for upload fetch to fire, then finalize
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await finalizeMeetingEnd();
+                } else {
+                    // ✅ Still in meeting — restart recorder for next 30s chunk
+                    if (mediaRecorderRef.current?.state === 'inactive') {
+                        try {
+                            mediaRecorderRef.current.start();
+                            console.log(`🎙️ Recording chunk ${chunkIndex}...`);
+                            scheduleNextStop();
+                        } catch (err) {
+                            console.error("❌ Failed to restart MediaRecorder:", err.message);
+                            toast.error("Recording interrupted. Report may be incomplete.");
+                        }
+                    }
+                }
+            };
+
+            // Start first chunk + schedule first stop
+            mediaRecorderRef.current.start();
+            console.log("🎙️ Chunked recording started (30s intervals)");
+            scheduleNextStop();
+
+        } catch (err) {
+            console.error("❌ Error starting MediaRecorder:", err);
+            toast.error("Could not start recording. Meeting reports will be unavailable.");
         }
-    }, [localStreamReady, localStream, isHost, roomId]);
+
+        return () => {
+            if (chunkIntervalRef.current) {
+                clearTimeout(chunkIntervalRef.current);
+                chunkIntervalRef.current = null;
+            }
+        };
+    }, [localStreamReady, localStream, isHost, roomId, finalizeMeetingEnd]);
 
     useEffect(() => {
         if (!socket) return;
@@ -268,9 +325,7 @@ export default function Meeting() {
         };
 
         const handleUserJoined = (data) => {
-            if (data.hostUserId) {
-                setHostUserId(data.hostUserId);
-            }
+            if (data.hostUserId) setHostUserId(data.hostUserId);
         };
 
         const handleMeetingEnded = (data) => {
@@ -303,13 +358,11 @@ export default function Meeting() {
                 chatOpenRef.current = false;
                 return;
             }
-
             if (participantsOpenRef.current) {
                 setIsParticipantsOpen(false);
                 participantsOpenRef.current = false;
                 return;
             }
-
             if (isHost) {
                 setShowEndConfirmModal(true);
             } else {
@@ -357,19 +410,15 @@ export default function Meeting() {
         localStorage.removeItem("isHost");
         localStorage.removeItem("livekitUrl");
         localStorage.removeItem("livekitToken");
-        // ✅ Don't replaceState here — let navigate() handle routing
     };
 
     const leaveMeeting = async () => {
         isExitingRef.current = true;
 
-        if (localStream) {
-            localStream.getTracks().forEach(track => track.stop());
-        }
-
+        if (localStream) localStream.getTracks().forEach(track => track.stop());
         socket?.disconnect();
 
-        const currentRoomId = roomId; // already from useParams, safe to use
+        const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
 
         clearMeetingStorage();
@@ -391,13 +440,27 @@ export default function Meeting() {
         }
     };
 
+    // ✅ endMeeting — sets exit flag, clears timer, stops recorder
     const endMeeting = async () => {
         if (!isHost) {
             leaveMeeting();
             return;
         }
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+
+        isExitingRef.current = true;
+
+        // Cancel scheduled next chunk
+        if (chunkIntervalRef.current) {
+            clearTimeout(chunkIntervalRef.current);
+            chunkIntervalRef.current = null;
+        }
+
+        if (mediaRecorderRef.current?.state === 'recording') {
+            // onstop will handle: upload final chunk → finalizeMeetingEnd → navigate
             mediaRecorderRef.current.stop();
+        } else {
+            // Edge case: recorder inactive between chunk cycles
+            await finalizeMeetingEnd();
         }
     };
 
@@ -406,12 +469,9 @@ export default function Meeting() {
         if (action === 'info') setShowInfoModal(true);
         if (action === 'chat') setIsChatOpen(true);
         if (action === 'participants') setIsParticipantsOpen(true);
-        if (action === 'screen-share') {
-            await toggleScreenShare();
-        }
+        if (action === 'screen-share') await toggleScreenShare();
     };
 
-    // ✅ Show a loading screen while rejoining instead of flashing /home
     if (isRejoining && !livekitToken) {
         return (
             <div className="layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
