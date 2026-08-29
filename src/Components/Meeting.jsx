@@ -76,23 +76,22 @@ export default function Meeting() {
 
     const participantNameMap = useMemo(() => {
         const map = {};
-        
-        // Primary source: participants from backend
+
         participants.forEach((p) => {
-            map[p._id] = p.username || "Unknown User";
+            const displayName = p.username || "Unknown User";
+            if (p._id) map[p._id] = displayName;
+            if (p.username) map[p.username] = displayName;
         });
 
-        // Secondary: LiveKit identity
         Object.values(remoteStreams).forEach(({ participant }) => {
             if (!participant) return;
-            const identity = participant.identity;
+            const identity = participant.identity; // now this IS the username
             if (!map[identity]) {
-                const matched = participants.find(
-                    p => p.username === identity || p._id === identity
-                );
-                // Priority: Backend match > LiveKit Name (if not Anonymous) > Identity ID
-                const livekitName = (participant.name && participant.name !== 'Anonymous') ? participant.name : null;
-                map[identity] = matched?.username || livekitName || identity;
+                // identity is username — use it directly
+                const livekitName = (participant.name && participant.name !== 'Anonymous')
+                    ? participant.name
+                    : null;
+                map[identity] = livekitName || identity;
             }
         });
 
@@ -343,7 +342,13 @@ export default function Meeting() {
         if (!socket) return;
 
         const handlePeerMicState = ({ userId: peerId, isMicOn }) => {
-            setPeerMicState((prev) => ({ ...prev, [peerId]: isMicOn }));
+            setPeerMicState((prev) => {
+                const updated = { ...prev, [peerId]: isMicOn };
+                // Also map by username if we have it in participantNameMap
+                const username = nameMapRef.current[peerId];
+                if (username) updated[username] = isMicOn;
+                return updated;
+            });
         };
 
         const handleUserJoined = (data) => {
