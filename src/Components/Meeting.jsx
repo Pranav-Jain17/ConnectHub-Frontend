@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from "react";
 import "./meeting.css";
+import { useSocket } from "../Providers/Socket";
 
 export default function Meeting() {
     const [roomId, setRoomId] = useState("");
     const meetTitle = localStorage.getItem("meetTitle");
+
+    const { socket } = useSocket();
+    socket.emit("join-room", { roomId: "1", emailId: "any@ex.com" });
 
     useEffect(() => {
         const id = localStorage.getItem("roomId") || "";

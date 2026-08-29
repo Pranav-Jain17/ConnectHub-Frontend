@@ -4,17 +4,20 @@ import Login from './Components/Login';
 import Signup from './Components/SignUp';
 import Home from './Components/Home';
 import Meeting from './Components/Meeting';
+import { SocketProvider } from './Providers/Socket';
 
 function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/meeting" element={<Meeting />} />
-      </Routes>
+      <SocketProvider>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/meeting" element={<Meeting />} />
+        </Routes>
+      </SocketProvider>
     </BrowserRouter>
   )
 }
