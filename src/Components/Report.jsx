@@ -96,7 +96,7 @@ export default function Report() {
         );
     }
 
-    if (report.reportStatus === 'processing') {
+    if (report.reportStatus === 'processing' || !report.report) {
         return (
             <div className="report-layout">
                 <header className="navbar">
