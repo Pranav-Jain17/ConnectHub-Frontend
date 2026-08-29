@@ -1,4 +1,107 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { Room, RoomEvent, RemoteParticipant, Participant, createLocalTracks } from 'livekit-client';
+
+export const useWebRTC = (livekitUrl, token) => {
+    const [room, setRoom] = useState(null);
+    const [localStream, setLocalStream] = useState(null);
+    const [remoteStreams, setRemoteStreams] = useState(new Map());
+    const [localStreamReady, setLocalStreamReady] = useState(false);
+
+    useEffect(() => {
+        const connectToLiveKit = async () => {
+            const room = new Room({
+                adaptiveStream: true,
+                dynacast: true,
+            });
+
+            setRoom(room);
+
+            room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+                const stream = track.attach();
+                setRemoteStreams(prev => new Map(prev).set(participant.identity, { stream, participant }));
+            });
+
+            room.on(RoomEvent.TrackUnsubscribed, (track, publication, participant) => {
+                setRemoteStreams(prev => {
+                    const newStreams = new Map(prev);
+                    newStreams.delete(participant.identity);
+                    return newStreams;
+                });
+            });
+
+            room.on(RoomEvent.ParticipantDisconnected, (participant) => {
+                setRemoteStreams(prev => {
+                    const newStreams = new Map(prev);
+                    newStreams.delete(participant.identity);
+                    return newStreams;
+                });
+            });
+
+            try {
+                await room.connect(livekitUrl, token);
+
+                const localTracks = await createLocalTracks({
+                    audio: true,
+                    video: true,
+                });
+
+                const stream = new MediaStream();
+                localTracks.forEach(track => {
+                    stream.addTrack(track.mediaStreamTrack);
+                    room.localParticipant.publishTrack(track);
+                });
+
+                setLocalStream(stream);
+                setLocalStreamReady(true);
+
+            } catch (error) {
+                console.error('Failed to connect to LiveKit:', error);
+            }
+        };
+
+        if (livekitUrl && token) {
+            connectToLiveKit();
+        }
+
+        return () => {
+            if (room) {
+                room.disconnect();
+            }
+        };
+    }, [livekitUrl, token]);
+
+    const toggleMic = useCallback(async () => {
+        if (room) {
+            const enabled = !room.localParticipant.isMicrophoneEnabled;
+            await room.localParticipant.setMicrophoneEnabled(enabled);
+            return enabled;
+        }
+    }, [room]);
+
+    const toggleVideo = useCallback(async () => {
+        if (room) {
+            const enabled = !room.localParticipant.isCameraEnabled;
+            await room.localParticipant.setCameraEnabled(enabled);
+            return enabled;
+        }
+    }, [room]);
+
+    return {
+        localStream,
+        localStreamReady,
+        remoteStreams: Object.fromEntries(remoteStreams.entries()),
+        remoteNames: {}, // This can be adapted if you pass participant names
+        toggleMic,
+        toggleVideo,
+        // Keep the old return values but commented out
+        // peerConnectionsRef: useRef({}),
+        // localStreamRef: useRef(null),
+    };
+};
+
+/*
+// OLD P2P Implementation
+import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWebRTC = (socket, roomId, userId, userName) => {
     const [remoteStreams, setRemoteStreams] = useState({});
@@ -181,7 +284,7 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             const remoteId = typeof payload === 'string' ? payload : payload.userId;
 
             if (!remoteId || remoteId === userId) return;
-            
+
             // Fix: Ensure any previous connection for this user is fully cleaned up before re-connecting
             handleUserDisconnected(remoteId);
 
@@ -190,10 +293,10 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 // Send name along with the offer
-                socket.emit('signal', remoteId, { 
-                    type: offer.type, 
+                socket.emit('signal', remoteId, {
+                    type: offer.type,
                     sdp: offer.sdp,
-                    senderName: userName 
+                    senderName: userName
                 });
             } catch (err) {
                 console.error('Error creating/sending offer to', remoteId, err);
@@ -202,7 +305,7 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
 
         const handleSignal = async (fromUserId, data) => {
             if (!fromUserId || !data || fromUserId === userId) return;
-            
+
             // Capture name if provided in signaling data
             if (data.senderName) {
                 setRemoteNames(prev => ({ ...prev, [fromUserId]: data.senderName }));
@@ -217,8 +320,8 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
                     // Send name back along with the answer
-                    socket.emit('signal', fromUserId, { 
-                        type: 'answer', 
+                    socket.emit('signal', fromUserId, {
+                        type: 'answer',
                         sdp: answer.sdp,
                         senderName: userName
                     });
@@ -325,3 +428,4 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
         localStreamRef,
     };
 };
+*/

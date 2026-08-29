@@ -4,7 +4,7 @@ import { toast } from "react-toastify";
 import "./Styles/meeting.css";
 import { useSocket } from "../Providers/Socket";
 import { useWebRTC } from "../Hooks/useWebRTC";
-import useScreenShare from "../Hooks/useScreenShare";
+// import useScreenShare from "../Hooks/useScreenShare";
 import { useParticipants } from "../Hooks/useParticipants";
 import ChatPanel from "./ChatPanel";
 import ParticipantsPanel from "./ParticipantsPanel";
@@ -17,6 +17,8 @@ export default function Meeting() {
     const { socket } = useSocket();
     const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
+    const [livekitUrl, setLivekitUrl] = useState("");
+    const [livekitToken, setLivekitToken] = useState("");
     const [isHost, setIsHost] = useState(false);
     const [hostUserId, setHostUserId] = useState(null);
     const [isMicOn, setIsMicOn] = useState(true);
@@ -50,39 +52,36 @@ export default function Meeting() {
         localStream,
         localStreamReady,
         remoteStreams,
-        remoteNames, // Get names shared directly via signaling
         toggleMic,
         toggleVideo,
-        localStreamRef,
-        peerConnectionsRef,
-    } = useWebRTC(socket, roomId, userId, userName);
+    } = useWebRTC(livekitUrl, livekitToken);
 
-    const {
-        isScreenSharing,
-        startScreenShare,
-        stopScreenShare,
-    } = useScreenShare({
-        peerConnectionsRef,
-        localStreamRef,
-        localVideoRef,
-        socket,
-        roomId
-    });
+    // const {
+    //     isScreenSharing,
+    //     startScreenShare,
+    //     stopScreenShare,
+    // } = useScreenShare({
+    //     peerConnectionsRef,
+    //     localStreamRef,
+    //     localVideoRef,
+    //     socket,
+    //     roomId
+    // });
 
     const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
 
     const participantNameMap = useMemo(() => {
         const map = {};
-        // 1. Start with API-fetched names
         participants.forEach((p) => {
             map[p._id] = p.username || "Unknown User";
         });
-        // 2. Overlay with names shared directly via P2P signaling (instant)
-        Object.entries(remoteNames).forEach(([pid, name]) => {
-            map[pid] = name;
+        Object.values(remoteStreams).forEach(({ participant }) => {
+            if (participant) {
+                map[participant.identity] = participant.identity;
+            }
         });
         return map;
-    }, [participants, remoteNames]);
+    }, [participants, remoteStreams]);
 
     useLayoutEffect(() => {
         chatOpenRef.current = isChatOpen;
@@ -99,14 +98,18 @@ export default function Meeting() {
     useEffect(() => {
         const storedRoomId = localStorage.getItem("roomId");
         const storedUserId = localStorage.getItem("userId");
+        const url = localStorage.getItem("livekitUrl");
+        const token = localStorage.getItem("livekitToken");
 
-        if (!storedRoomId || !storedUserId) {
+        if (!storedRoomId || !storedUserId || !url || !token) {
             navigate("/home", { replace: true });
             return;
         }
 
         setRoomId(storedRoomId);
         setUserId(storedUserId);
+        setLivekitUrl(url);
+        setLivekitToken(token);
         setIsHost(localStorage.getItem("isHost") === "true");
     }, [navigate]);
 
@@ -173,8 +176,6 @@ export default function Meeting() {
                         const token = localStorage.getItem("loginToken");
                         toast.info("Uploading audio for report...");
                         
-                        // Fire and forget the fetch (or handle it in background)
-                        // and navigate immediately so user doesn't wait for upload completion
                         fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
                             method: 'POST',
                             headers: {
@@ -193,10 +194,8 @@ export default function Meeting() {
                             toast.error('Could not save meeting report.');
                         });
 
-                        // Notify others instantly by disconnecting before navigating
                         socket?.disconnect();
 
-                        // Immediate navigation
                         clearMeetingStorage();
                         navigate(`/report/${roomId}`, { replace: true });
 
@@ -204,7 +203,6 @@ export default function Meeting() {
                         console.error('Failed to upload audio:', error);
                         toast.error('Could not save meeting report. Check console for details.');
                     } finally {
-                        // This console.log helps confirm the fetch promise completed.
                         console.log("Upload fetch process finished.");
                     }
                 };
@@ -224,25 +222,24 @@ export default function Meeting() {
             setPeerMicState((prev) => ({ ...prev, [peerId]: isMicOn }));
         };
 
-        const handleRoomFull = () => {
-            toast.error("This room is full (Max 2 people).");
-            navigate("/home");
-        };
+        // const handleRoomFull = () => {
+        //     toast.error("This room is full (Max 2 people).");
+        //     navigate("/home");
+        // };
 
-        const handleUserLeft = (data) => {
-            const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
+        // const handleUserLeft = (data) => {
+        //     const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
             
-            // If the host leaves or disconnects, participants should also be redirected to the report screen
-            if (leaverId === hostUserId && !isHost) {
-                toast.info("The host has ended the meeting.");
-                clearMeetingStorage();
-                navigate(`/report/${roomId}`, { replace: true });
-                return;
-            }
+        //     if (leaverId === hostUserId && !isHost) {
+        //         toast.info("The host has ended the meeting.");
+        //         clearMeetingStorage();
+        //         navigate(`/report/${roomId}`, { replace: true });
+        //         return;
+        //     }
 
-            const name = nameMapRef.current[leaverId] || "A participant";
-            toast.info(`${name} left the meeting`);
-        };
+        //     const name = nameMapRef.current[leaverId] || "A participant";
+        //     toast.info(`${name} left the meeting`);
+        // };
 
         const handleUserJoined = (data) => {
             if (data.hostUserId) {
@@ -250,10 +247,9 @@ export default function Meeting() {
             }
         };
 
-        const onUserConnected = () => {
-            // Trigger participant refresh when someone connects
-            participants.length > 0 && socket.emit('get-participants'); // Fallback if supported
-        };
+        // const onUserConnected = () => {
+        //     participants.length > 0 && socket.emit('get-participants');
+        // };
 
         const handleMeetingEnded = (data) => {
             if (data && data.meetingId) {
@@ -264,20 +260,19 @@ export default function Meeting() {
         };
 
         socket.on("peer-mic-state", handlePeerMicState);
-        socket.on("room-full", handleRoomFull);
-        socket.on("user-left", handleUserLeft);
-        socket.on("user-disconnected", handleUserLeft);
-        socket.on("user-connected", onUserConnected);
+        // socket.on("room-full", handleRoomFull);
+        // socket.on("user-left", handleUserLeft);
+        // socket.on("user-disconnected", handleUserLeft);
+        // socket.on("user-connected", onUserConnected);
         socket.on("user-joined", handleUserJoined);
-        console.log("Listening for 'meeting-ended' event...");
         socket.on("meeting-ended", handleMeetingEnded);
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
-            socket.off("room-full", handleRoomFull);
-            socket.off("user-left", handleUserLeft);
-            socket.off("user-disconnected", handleUserLeft);
-            socket.off("user-connected", onUserConnected);
+            // socket.off("room-full", handleRoomFull);
+            // socket.off("user-left", handleUserLeft);
+            // socket.off("user-disconnected", handleUserLeft);
+            // socket.off("user-connected", onUserConnected);
             socket.off("user-joined", handleUserJoined);
             socket.off("meeting-ended", handleMeetingEnded);
         };
@@ -322,8 +317,8 @@ export default function Meeting() {
         return () => clearInterval(timer);
     }, []);
 
-    const handleMicToggle = () => {
-        const newState = toggleMic();
+    const handleMicToggle = async () => {
+        const newState = await toggleMic();
         setIsMicOn(newState);
         socket?.emit("mic-toggle", { isMicOn: newState });
     };
@@ -344,18 +339,18 @@ export default function Meeting() {
         localStorage.removeItem("roomId");
         localStorage.removeItem("meetTitle");
         localStorage.removeItem("isHost");
+        localStorage.removeItem("livekitUrl");
+        localStorage.removeItem("livekitToken");
         window.history.replaceState(null, "", "/home");
     };
 
     const leaveMeeting = async () => {
         isExitingRef.current = true;
         
-        // Stop media immediately
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
+        if (localStream) {
+            localStream.getTracks().forEach(track => track.stop());
         }
 
-        // Force disconnect to trigger instant backend cleanup
         socket?.disconnect();
 
         const currentRoomId = roomId;
@@ -388,7 +383,6 @@ export default function Meeting() {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
             mediaRecorderRef.current.stop();
         }
-        // The onstop event will handle the upload and the meeting-ended event will handle navigation.
     };
 
     const handleMobileAction = async (action) => {
@@ -396,27 +390,27 @@ export default function Meeting() {
         if (action === 'info') setShowInfoModal(true);
         if (action === 'chat') setIsChatOpen(true);
         if (action === 'participants') setIsParticipantsOpen(true);
-        if (action === 'screen-share') {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-                toast.error("Your browser does not support screen sharing.");
-                return;
-            }
-            try {
-                if (isScreenSharing) {
-                    await stopScreenShare();
-                } else {
-                    await startScreenShare();
-                }
-            } catch (err) {
-                if (err.name === 'NotAllowedError') {
-                    toast.error("Permission denied. You must click 'Start now' on the system popup.");
-                } else if (err.name === 'NotFoundError') {
-                    toast.error("No screen found to share.");
-                } else {
-                    toast.error(`Error: ${err.message || "Failed to start"}`);
-                }
-            }
-        }
+        // if (action === 'screen-share') {
+        //     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        //         toast.error("Your browser does not support screen sharing.");
+        //         return;
+        //     }
+        //     try {
+        //         if (isScreenSharing) {
+        //             await stopScreenShare();
+        //         } else {
+        //             await startScreenShare();
+        //         }
+        //     } catch (err) {
+        //         if (err.name === 'NotAllowedError') {
+        //             toast.error("Permission denied. You must click 'Start now' on the system popup.");
+        //         } else if (err.name === 'NotFoundError') {
+        //             toast.error("No screen found to share.");
+        //         } else {
+        //             toast.error(`Error: ${err.message || "Failed to start"}`);
+        //         }
+        //     }
+        // }
     };
 
     return (
@@ -445,8 +439,8 @@ export default function Meeting() {
                 localStreamReady={localStreamReady}
                 isVideoOn={isVideoOn}
                 handleVideoToggle={handleVideoToggle}
-                isScreenSharing={isScreenSharing}
-                onScreenShareClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                // isScreenSharing={isScreenSharing}
+                // onScreenShareClick={isScreenSharing ? stopScreenShare : startScreenShare}
                 onEndClick={() => isHost ? setShowEndConfirmModal(true) : setShowLeaveConfirmModal(true)}
                 onInfoClick={() => setShowInfoModal(true)}
                 onChatClick={() => setIsChatOpen(true)}

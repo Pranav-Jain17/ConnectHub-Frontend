@@ -30,12 +30,12 @@ export default function VideoGrid({
                 </span>
             </div>
 
-            {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
+            {remoteStreams && Object.values(remoteStreams).map(({ stream, participant }) => (
                 <RemoteVideo
-                    key={remoteUserId}
+                    key={participant.sid}
                     stream={stream}
-                    isMicOn={peerMicState[remoteUserId]}
-                    name={participantNameMap[remoteUserId] || "Remote User"}
+                    isMicOn={peerMicState[participant.identity]}
+                    name={participantNameMap[participant.identity] || "Remote User"}
                 />
             ))}
         </main>

@@ -11,7 +11,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const PrivateRoute = ({ children }) => {
-  const isAuth = !!localStorage.getItem("loginToken");
+  const isAuth = !!localStorage.getItem("loginToken"); // '!!' converts the value to a boolean
   return isAuth ? children : <Navigate to="/login" replace />;
 };
 

@@ -73,6 +73,8 @@ function Home() {
             localStorage.setItem("roomId", data.roomId);
             localStorage.setItem("meetTitle", title);
             localStorage.setItem("isHost", "true");
+            localStorage.setItem("livekitToken", data.token);
+            localStorage.setItem("livekitUrl", data.livekitUrl);
             navigate("/meeting");
             setModalType(null);
         } catch (err) {
@@ -91,6 +93,8 @@ function Home() {
             localStorage.setItem("roomId", roomId);
             localStorage.setItem("meetTitle", data?.meeting?.title || `Meeting ${roomId}`);
             localStorage.setItem("isHost", "false");
+            localStorage.setItem("livekitToken", data.token);
+            localStorage.setItem("livekitUrl", data.livekitUrl);
             navigate("/meeting");
             setModalType(null);
         } catch (err) {
