@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useMemo, useLayoutEffect, useCallback } fr
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "./Styles/meeting.css";
-import { useSocket } from "../Providers/Socket";
+import { useSocket } from "../Hooks/useSocket";
 import { useWebRTC } from "../Hooks/useWebRTC";
 import { useParticipants } from "../Hooks/useParticipants";
 import ChatPanel from "./ChatPanel";

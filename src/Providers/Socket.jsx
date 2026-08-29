@@ -1,11 +1,6 @@
 import React, { useMemo, useEffect } from "react";
 import { io } from "socket.io-client";
-
-const SocketContext = React.createContext(null);
-
-export const useSocket = () => {
-    return React.useContext(SocketContext);
-};
+import { SocketContext } from "../Hooks/useSocket";
 
 export const SocketProvider = (props) => {
     const socket = useMemo(() => {

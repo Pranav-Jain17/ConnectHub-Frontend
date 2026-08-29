@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useSocket } from "../Providers/Socket";
+import { useSocket } from "../Hooks/useSocket";
 import "./Styles/report.css";
 
 export default function Report() {

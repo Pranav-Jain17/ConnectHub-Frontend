@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import HomeModals from './HomeModals';
 import './Styles/home.css';
-import { useSocket } from '../Providers/Socket';
+import { useSocket } from '../Hooks/useSocket';
 
 function Home() {
     const navigate = useNavigate();
