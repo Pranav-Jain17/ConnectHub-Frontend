@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./login.css";
 import { toast } from "react-toastify";
@@ -12,12 +12,30 @@ function Login() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
+    const passwordRef = useRef(null);
+    const cursorPosRef = useRef(null);
+
+    const handleTogglePassword = () => {
+        const input = passwordRef.current;
+        if (input) {
+            cursorPosRef.current = input.selectionStart;
+        }
+        setShowPassword(prev => !prev);
+    };
+
+    useLayoutEffect(() => {
+        const input = passwordRef.current;
+        if (input && cursorPosRef.current !== null) {
+            input.setSelectionRange(cursorPosRef.current, cursorPosRef.current);
+            input.focus();
+        }
+    }, [showPassword]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
         const body = { password };
-
         if (useEmail) {
             body.email = identifier;
         } else {
@@ -25,7 +43,6 @@ function Login() {
         }
 
         try {
-            // const response = await fetch('https://connecthub-2.onrender.com/auth/login', {
             const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/login', {
                 method: 'POST',
                 headers: {
@@ -40,7 +57,6 @@ function Login() {
             }
 
             const data = await response.json();
-            console.log("RESPONSE: " + JSON.stringify(data));
             const loginToken = data.token;
 
             if (!rememberMe) {
@@ -105,7 +121,9 @@ function Login() {
                             <label>Password</label>
                             <div className="password-input-wrapper">
                                 <input
-                                    type={showPassword ? "text" : "password"} // Dynamic type change
+                                    ref={passwordRef}
+                                    type="text"
+                                    className={showPassword ? "unmasked-password" : "masked-password"}
                                     placeholder="Enter your Password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
@@ -115,7 +133,7 @@ function Login() {
                                 <button
                                     type="button"
                                     className="password-toggle-icon"
-                                    onClick={() => setShowPassword(!showPassword)}
+                                    onClick={() => setShowPassword(prev => !prev)}
                                     tabIndex="-1"
                                 >
                                     {showPassword ? (
