@@ -30,6 +30,8 @@ export default function Meeting() {
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
     const [currentTime, setCurrentTime] = useState("");
     const localVideoRef = useRef(null);
+    const mediaRecorderRef = useRef(null);
+    const audioChunksRef = useRef([]);
     const isExitingRef = useRef(false);
     const nameMapRef = useRef({});
     const chatOpenRef = useRef(isChatOpen);
@@ -135,7 +137,40 @@ export default function Meeting() {
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
         }
-    }, [localStreamReady, localStream]);
+
+        if (isHost && localStream) {
+            mediaRecorderRef.current = new MediaRecorder(localStream, { mimeType: 'audio/webm' });
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    audioChunksRef.current.push(event.data);
+                }
+            };
+
+            mediaRecorderRef.current.onstop = async () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const formData = new FormData();
+                formData.append('audio', audioBlob, 'meeting.webm');
+                formData.append('meetingId', roomId);
+
+                try {
+                    const token = localStorage.getItem("loginToken");
+                    await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                        body: formData,
+                    });
+                } catch (error) {
+                    console.error('Failed to upload audio:', error);
+                    toast.error('Could not save meeting report.');
+                }
+            };
+
+            mediaRecorderRef.current.start();
+        }
+    }, [localStreamReady, localStream, isHost, roomId]);
 
     useEffect(() => {
         if (!socket) return;
@@ -166,12 +201,21 @@ export default function Meeting() {
             participants.length > 0 && socket.emit('get-participants'); // Fallback if supported
         };
 
+        const handleMeetingEnded = (data) => {
+            if (data && data.meetingId) {
+                toast.info("The host has ended the meeting.");
+                clearMeetingStorage();
+                navigate(`/report/${data.meetingId}`, { replace: true });
+            }
+        };
+
         socket.on("peer-mic-state", handlePeerMicState);
         socket.on("room-full", handleRoomFull);
         socket.on("user-left", handleUserLeft);
         socket.on("user-disconnected", handleUserLeft);
         socket.on("user-connected", onUserConnected);
         socket.on("user-joined", handleUserJoined);
+        socket.on("meeting-ended", handleMeetingEnded);
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
@@ -180,6 +224,7 @@ export default function Meeting() {
             socket.off("user-disconnected", handleUserLeft);
             socket.off("user-connected", onUserConnected);
             socket.off("user-joined", handleUserJoined);
+            socket.off("meeting-ended", handleMeetingEnded);
         };
     }, [socket, navigate, roomId, userId, participants.length]);
 
@@ -281,50 +326,14 @@ export default function Meeting() {
     };
 
     const endMeeting = async () => {
-        isExitingRef.current = true;
-        
-        // 1. Stop local media immediately
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
+        if (!isHost) {
+            leaveMeeting();
+            return;
         }
-
-        // Force disconnect to trigger instant backend cleanup
-        socket?.disconnect();
-
-        const currentRoomId = roomId;
-        const token = localStorage.getItem("loginToken");
-
-        // 2. Clear UI/Storage immediately (Instant redirection)
-        clearMeetingStorage();
-        toast.info("Ending meeting...");
-        navigate("/home", { replace: true });
-
-        // 3. Perform the background cleanup on the server
-        try {
-            const res = await fetch(
-                `https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/end`,
-                {
-                    method: "DELETE",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                }
-            );
-
-            if (!res.ok) {
-                // If ending failed (e.g. not host), at least try to leave
-                fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/leave`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                    },
-                }).catch(() => {});
-            }
-        } catch (err) {
-            console.error("Error ending meeting in background:", err);
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            mediaRecorderRef.current.stop();
         }
+        // The onstop event will handle the upload and the meeting-ended event will handle navigation.
     };
 
     const handleMobileAction = async (action) => {
@@ -373,6 +382,7 @@ export default function Meeting() {
             />
 
             <MeetingToolbar
+                isHost={isHost}
                 currentTime={currentTime}
                 meetTitle={meetTitle}
                 isMicOn={isMicOn}

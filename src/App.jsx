@@ -4,6 +4,7 @@ import Login from './Components/Login';
 import Signup from './Components/SignUp';
 import Home from './Components/Home';
 import Meeting from './Components/Meeting';
+import Report from './Components/Report';
 import ResetPassword from './Components/ResetPassword';
 import { SocketProvider } from './Providers/Socket';
 import { ToastContainer } from "react-toastify";
@@ -29,6 +30,7 @@ function App() {
           <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
           <Route path="/home" element={<PrivateRoute> <Home />  </PrivateRoute>} />
           <Route path="/meeting" element={<PrivateRoute> <Meeting /> </PrivateRoute>} />
+          <Route path="/report/:meetingId" element={<PrivateRoute> <Report /> </PrivateRoute>} />
           <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
         </Routes>
       </SocketProvider>

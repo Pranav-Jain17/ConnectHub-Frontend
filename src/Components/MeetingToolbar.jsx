@@ -1,6 +1,7 @@
 import "./Styles/meetingToolbar.css";
 
 export default function MeetingToolbar({
+    isHost,
     currentTime,
     meetTitle,
     isMicOn,
@@ -55,6 +56,7 @@ export default function MeetingToolbar({
 
                 <button className="btn end-btn" onClick={onEndClick}>
                     <img src="/assets/svg/endcall.svg" alt="End Call" />
+                    <span>{isHost ? 'End' : 'Leave'}</span>
                 </button>
             </div>
 

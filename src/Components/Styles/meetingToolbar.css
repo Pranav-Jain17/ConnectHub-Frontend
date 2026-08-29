@@ -93,6 +93,14 @@
 .btn.end-btn,
 .btn-off {
     background: #d9534f !important;
+    width: auto;
+    padding: 0 16px;
+}
+
+.btn.end-btn span {
+    margin-left: 8px;
+    font-weight: 600;
+    color: white;
 }
 
 .info-btn {

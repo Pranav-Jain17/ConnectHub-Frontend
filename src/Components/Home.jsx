@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import HomeModals from './HomeModals';
 import './Styles/home.css';
@@ -14,6 +14,19 @@ function Home() {
 
     const [showDropdown, setShowDropdown] = useState(false);
     const [modalType, setModalType] = useState(null);
+    const [reports, setReports] = useState([]);
+
+    useEffect(() => {
+        const fetchReports = async () => {
+            try {
+                const data = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings/reports/me', 'GET');
+                setReports(data);
+            } catch (err) {
+                console.error("Failed to fetch reports:", err);
+            }
+        };
+        fetchReports();
+    }, [loginToken]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -143,6 +156,25 @@ function Home() {
                 <div className="home-right">
                     <img src="/assets/signup.png" alt="Meeting illustration" />
                 </div>
+            </div>
+
+            <div className="reports-container">
+                <h2>Past Meetings</h2>
+                {reports.length > 0 ? (
+                    <div className="reports-grid">
+                        {reports.map((report) => (
+                            <Link to={`/report/${report.meetingId}`} key={report.meetingId} className="report-card-link">
+                                <div className="report-card-home">
+                                    <h3>{report.title}</h3>
+                                    <p>Ended on: {new Date(report.endedAt).toLocaleDateString()}</p>
+                                    <button className="btn-view-report">View Report</button>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p>No past meetings found.</p>
+                )}
             </div>
 
             <HomeModals

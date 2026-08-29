@@ -204,6 +204,71 @@ body {
     display: block;
 }
 
+.reports-container {
+    width: 95%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+.reports-container h2 {
+    font-size: 1.8rem;
+    color: #223e63;
+    margin-bottom: 20px;
+}
+
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.report-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.report-card-home {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.report-card-home:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.report-card-home h3 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+}
+
+.report-card-home p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.btn-view-report {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background-color: #f0f2f5;
+    color: #1a73e8;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.btn-view-report:hover {
+    background-color: #e9f1ff;
+}
+
 @media (max-width: 992px) {
     .home-container {
         display: flex;
