@@ -522,6 +522,7 @@ export default function Meeting() {
 
             <VideoGrid
                 localVideoRef={localVideoRef}
+                localStream={localStream}
                 isMicOn={isMicOn}
                 userName={userName}
                 isHost={isHost}

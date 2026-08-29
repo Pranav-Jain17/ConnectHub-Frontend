@@ -3,6 +3,7 @@ import "./Styles/video-grid.css";
 
 export default function VideoGrid({
     localVideoRef,
+    localStream,
     isMicOn,
     userName,
     isHost,
@@ -18,6 +19,13 @@ export default function VideoGrid({
 
     // Only camera feeds (no screen shares)
     const cameraFeeds = remoteTracks.filter(t => !t.isScreenShare && t.kind === 'video');
+
+    // ✅ Re-attach local stream whenever mode switches (ref points to a new DOM element)
+    useEffect(() => {
+        if (localStream && localVideoRef.current) {
+            localVideoRef.current.srcObject = localStream;
+        }
+    }, [localStream, localVideoRef, activeScreenShare]);
 
     // ✅ Screen share mode — big stage + vertical sidebar
     if (activeScreenShare) {
