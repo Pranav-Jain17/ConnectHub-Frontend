@@ -48,11 +48,12 @@ export default function Meeting() {
         localStream,
         localStreamReady,
         remoteStreams,
+        remoteNames,
         toggleMic,
         toggleVideo,
         localStreamRef,
         peerConnectionsRef,
-    } = useWebRTC(socket, roomId, userId);
+    } = useWebRTC(socket, roomId, userId, userName);
 
     const {
         isScreenSharing,
@@ -70,11 +71,16 @@ export default function Meeting() {
 
     const participantNameMap = useMemo(() => {
         const map = {};
+        // 1. Start with fetched participants
         participants.forEach((p) => {
             map[p._id] = p.username || "Unknown User";
         });
+        // 2. Override/Supplement with names received via signaling
+        Object.entries(remoteNames).forEach(([id, name]) => {
+            if (name) map[id] = name;
+        });
         return map;
-    }, [participants]);
+    }, [participants, remoteNames]);
 
     useLayoutEffect(() => {
         chatOpenRef.current = isChatOpen;
@@ -144,10 +150,10 @@ export default function Meeting() {
         };
 
         const handleMeetingEnded = () => {
+            console.log("📩 Received meeting-ended signal");
             if (isExitingRef.current) return;
             isExitingRef.current = true;
             
-            // Stop all local tracks immediately
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
@@ -172,7 +178,7 @@ export default function Meeting() {
         socket.on("room-full", handleRoomFull);
         socket.on("meeting-ended", handleMeetingEnded);
         socket.on("user-left", handleUserLeft);
-        socket.on("user-joined", handleUserJoined); // Listen for join to sync host
+        socket.on("user-joined", handleUserJoined);
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
@@ -181,7 +187,7 @@ export default function Meeting() {
             socket.off("user-left", handleUserLeft);
             socket.off("user-joined", handleUserJoined);
         };
-    }, [socket, navigate]);
+    }, [socket]); // Removed navigate from dependencies to prevent constant re-binding
 
     useEffect(() => {
         window.history.pushState(null, document.title, window.location.href);

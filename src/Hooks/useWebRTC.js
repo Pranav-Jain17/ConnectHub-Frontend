@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
-export const useWebRTC = (socket, roomId, userId) => {
+export const useWebRTC = (socket, roomId, userId, userName) => {
     const [remoteStreams, setRemoteStreams] = useState({});
+    const [remoteNames, setRemoteNames] = useState({});
     const [localStreamReady, setLocalStreamReady] = useState(false);
     const localStreamRef = useRef(null);
     const peerConnectionsRef = useRef({});
@@ -51,6 +52,11 @@ export const useWebRTC = (socket, roomId, userId) => {
             delete next[remoteUserId];
             return next;
         });
+        setRemoteNames((prev) => {
+            const next = { ...prev };
+            delete next[remoteUserId];
+            return next;
+        });
     }, []);
 
     useEffect(() => {
@@ -89,8 +95,8 @@ export const useWebRTC = (socket, roomId, userId) => {
 
     useEffect(() => {
         if (!socket || !roomId || !userId) return;
-        const createPeerConnection = (remoteUserId) => {
 
+        const createPeerConnection = (remoteUserId) => {
             if (peerConnectionsRef.current[remoteUserId]) {
                 return peerConnectionsRef.current[remoteUserId];
             }
@@ -106,19 +112,13 @@ export const useWebRTC = (socket, roomId, userId) => {
                         console.warn('addTrack failed:', err);
                     }
                 });
-            } else {
-                console.warn('Local stream not available when creating PC for', remoteUserId);
             }
 
             pc.ontrack = (event) => {
                 const { streams, track } = event;
-                
                 setRemoteStreams((prev) => {
                     const existingStream = prev[remoteUserId];
-                    
                     if (streams && streams[0]) {
-                        // If a stream is already provided, use it. 
-                        // But if we already have a stream, we might need to merge tracks.
                         if (!existingStream) {
                             return { ...prev, [remoteUserId]: streams[0] };
                         } else {
@@ -127,11 +127,9 @@ export const useWebRTC = (socket, roomId, userId) => {
                                     existingStream.addTrack(t);
                                 }
                             });
-                            // Create new instance to trigger React re-render
                             return { ...prev, [remoteUserId]: new MediaStream(existingStream.getTracks()) };
                         }
                     } else {
-                        // Fallback: add individual track to existing or new stream
                         const stream = existingStream || new MediaStream();
                         if (track && !stream.getTracks().find(t => t.id === track.id)) {
                             stream.addTrack(track);
@@ -167,7 +165,6 @@ export const useWebRTC = (socket, roomId, userId) => {
         const drainCandidates = async (remoteUserId) => {
             const pc = peerConnectionsRef.current[remoteUserId];
             const queue = pendingCandidatesRef.current[remoteUserId];
-
             if (pc && pc.remoteDescription && queue && queue.length > 0) {
                 while (queue.length > 0) {
                     const candidate = queue.shift();
@@ -180,29 +177,34 @@ export const useWebRTC = (socket, roomId, userId) => {
             }
         };
 
-        const handleUserConnected = async (remoteUserId) => {
-            if (!remoteUserId || remoteUserId === userId) return;
-            const pc = createPeerConnection(remoteUserId);
+        const handleUserConnected = async (payload) => {
+            const remoteId = typeof payload === 'string' ? payload : payload.userId;
+            const remoteName = typeof payload === 'object' ? payload.userName : null;
+
+            if (!remoteId || remoteId === userId) return;
+            
+            if (remoteName) {
+                setRemoteNames(prev => ({ ...prev, [remoteId]: remoteName }));
+            }
+
+            const pc = createPeerConnection(remoteId);
             try {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                socket.emit('signal', remoteUserId, { type: offer.type, sdp: offer.sdp });
+                socket.emit('signal', remoteId, { type: offer.type, sdp: offer.sdp });
             } catch (err) {
-                console.error('Error creating/sending offer to', remoteUserId, err);
+                console.error('Error creating/sending offer to', remoteId, err);
             }
         };
 
         const handleSignal = async (fromUserId, data) => {
             if (!fromUserId || !data || fromUserId === userId) return;
-
             let pc = peerConnectionsRef.current[fromUserId];
-
             if (data.type === 'offer') {
                 if (!pc) pc = createPeerConnection(fromUserId);
                 try {
                     await pc.setRemoteDescription(new RTCSessionDescription(data));
                     await drainCandidates(fromUserId);
-
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
                     socket.emit('signal', fromUserId, { type: 'answer', sdp: answer.sdp });
@@ -223,9 +225,7 @@ export const useWebRTC = (socket, roomId, userId) => {
         const handleIceCandidate = async (payload) => {
             const { fromUserId, candidate } = payload || {};
             if (!candidate || !fromUserId) return;
-
             const pc = peerConnectionsRef.current[fromUserId];
-
             if (pc && pc.remoteDescription) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -255,28 +255,23 @@ export const useWebRTC = (socket, roomId, userId) => {
 
     useEffect(() => {
         if (!socket || !roomId || !userId || !localStreamReady) return;
-
         const handleJoin = () => {
-            socket.emit('join-room', roomId, userId);
+            socket.emit('join-room', roomId, userId, userName);
         };
-
         if (socket.connected) {
             handleJoin();
         }
-
         socket.on('connect', handleJoin);
-
         return () => {
             socket.off('connect', handleJoin);
         };
-    }, [socket, roomId, userId, localStreamReady]);
+    }, [socket, roomId, userId, userName, localStreamReady]);
 
     const toggleMic = useCallback(() => {
         if (localStreamRef.current) {
             const track = localStreamRef.current.getAudioTracks()[0];
             if (track) {
                 track.enabled = !track.enabled;
-                console.log(track.enabled ? '🎤 Mic ON' : '🔇 Mic OFF');
                 return track.enabled;
             }
         }
@@ -298,6 +293,7 @@ export const useWebRTC = (socket, roomId, userId) => {
         localStream: localStreamRef.current,
         localStreamReady,
         remoteStreams,
+        remoteNames,
         toggleMic,
         toggleVideo,
         peerConnectionsRef,
