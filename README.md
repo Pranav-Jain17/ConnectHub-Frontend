@@ -22,7 +22,7 @@ ConnectHub is a high-performance, Peer-to-Peer (P2P) video chat application deve
 
 1. **Clone the repository**
    ```bash
-   git clone [https://github.com/your-username/ConnectHub.git](https://github.com/your-username/ConnectHub.git)
+   git clone https://github.com/Dikshant005/connectHub-frontend
    ```
 2. **Navigate to the project directory**
    ```bash
