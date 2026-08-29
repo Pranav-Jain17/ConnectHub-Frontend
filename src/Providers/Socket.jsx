@@ -20,7 +20,7 @@ export const SocketProvider = (props) => {
             console.log('🔐 Token (first 20 chars):', token.substring(0, 20) + '...');
         }
 
-        const socketInstance = io('http://3.110.101.93:3000', {
+        const socketInstance = io('https://trickish-urijah-pachydermatously.ngrok-free.dev', {
             auth: {
                 token: token
             },
