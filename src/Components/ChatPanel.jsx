@@ -8,7 +8,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
     console.log("💬 ChatPanel Rendered | isOpen:", isOpen, "| roomId:", roomId);
 
-    // Auto scroll when messages change
+    // 1. Auto scroll when messages change
     useEffect(() => {
         if (messagesEndRef.current) {
             console.log("⬇️ ChatPanel: Auto-scrolling to bottom");
@@ -16,7 +16,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         }
     }, [messages, isOpen]);
 
-    // Load chat history when panel opens
+    // 2. Load chat history when panel opens
     useEffect(() => {
         if (!isOpen) {
             console.log("🚪 ChatPanel closed — not loading history");
@@ -32,7 +32,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         async function loadHistory() {
             try {
                 const token = localStorage.getItem("loginToken");
-
                 console.log("📡 Fetching history from API...");
 
                 const res = await fetch(`https://connecthub.dikshant-ahalawat.live/chat/${roomId}`, {
@@ -48,7 +47,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
                 const data = await res.json();
                 console.log(`📜 Chat history loaded: ${data.length} messages`);
-
                 setMessages(data);
             } catch (err) {
                 console.error("❌ ChatPanel: Error loading history:", err);
@@ -58,7 +56,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         loadHistory();
     }, [isOpen, roomId]);
 
-    // Listen for new messages from socket
+    // 3. Listen for new messages from socket
     useEffect(() => {
         if (!socket) {
             console.warn("⚠️ ChatPanel: Socket not ready — cannot listen for messages");
@@ -80,10 +78,9 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         };
     }, [socket]);
 
-    // Send message
+    // 4. Send message
     const sendMessage = () => {
         const trimmed = text.trim();
-
         console.log("✏️ ChatPanel: Send attempt:", trimmed);
 
         if (!trimmed) {
@@ -104,52 +101,16 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
         };
 
         console.log("📤 ChatPanel: Emitting message to socket:", payload);
-
         socket.emit("send-chat-message", payload);
         setText("");
-
         console.log("✅ ChatPanel: Message sent & input cleared");
     };
 
-    useEffect(() => {
-        // Only run in browsers that support visualViewport
-        if (typeof window !== "undefined" && window.visualViewport) {
-            const footer = document.querySelector(".chat-panel-footer");
-
-            const adjustFooter = () => {
-                const keyboardHeight = window.innerHeight - window.visualViewport.height - (window.visualViewport.offsetTop || 0);
-                if (footer) {
-                    footer.style.transform = keyboardHeight > 0
-                        ? `translateY(-${keyboardHeight}px)`
-                        : "";
-                }
-            };
-
-            // Listen for viewport size changes (keyboard open/close)
-            window.visualViewport.addEventListener("resize", adjustFooter);
-            window.visualViewport.addEventListener("scroll", adjustFooter);
-
-            return () => {
-                window.visualViewport.removeEventListener("resize", adjustFooter);
-                window.visualViewport.removeEventListener("scroll", adjustFooter);
-            };
-        }
-    }, []);
-
-    useEffect(() => {
-        const onResize = () => {
-            if (messagesEndRef.current) {
-                messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-            }
-        };
-
-        if (window.visualViewport) {
-            window.visualViewport.addEventListener("resize", onResize);
-            return () => {
-                window.visualViewport.removeEventListener("resize", onResize);
-            };
-        }
-    }, [messages]);
+    /**
+     * NOTE: The manual viewport calculation logic that used "footer.style.transform" 
+     * was removed because you added interactive-widget=resizes-content to index.html.
+     * Keeping it would cause the "jumping" bug to persist.
+     */
 
     return (
         <div className={`chat-panel-wrapper ${isOpen ? "open" : ""}`}>
@@ -178,7 +139,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                 <div className="chat-panel-body">
                     {messages.map((msg) => {
                         const isMe = msg.senderId === userId;
-
                         console.log("📄 Rendering message:", msg);
 
                         return (
@@ -191,7 +151,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                                         {isMe ? "You" : msg.senderName}
                                     </span>
                                 </div>
-                                <div className="chat-bubble">{msg.text}</div>
+                                <div className="chat-bubble">{msg.text || msg.message}</div>
                             </div>
                         );
                     })}

@@ -7,6 +7,7 @@ function Signup() {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
@@ -70,15 +71,28 @@ function Signup() {
                                 required
                             />
                         </div>
-                        <div className="form-group">
+                        <div className="password-input-wrapper">
                             <label>Password</label>
                             <input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Enter your Password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="new-password"
                             />
+                            <button
+                                type="button"
+                                className="password-toggle-icon"
+                                onClick={() => setShowPassword(!showPassword)}
+                                tabIndex="-1"
+                            >
+                                {showPassword ? (
+                                    <img src="./assets/svg/showPswd.svg" alt="Show" />
+                                ) : (
+                                    <img src="./assets/svg/hidePswd.svg" alt="Hide" />
+                                )}
+                            </button>
                         </div>
                         <button type="submit" className="btn-signup">Sign Up</button>
                     </form>

@@ -10,6 +10,7 @@ function Login() {
     const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -102,14 +103,28 @@ function Login() {
                         </div>
                         <div className="form-group">
                             <label>Password</label>
-                            <input
-                                type="password"
-                                placeholder="Enter your Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
-                            />
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={showPassword ? "text" : "password"} // Dynamic type change
+                                    placeholder="Enter your Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    autoComplete="current-password"
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-icon"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    tabIndex="-1"
+                                >
+                                    {showPassword ? (
+                                        <img src="./assets/svg/showPswd.svg" alt="Show Password" />
+                                    ) : (
+                                        <img src="./assets/svg/hidePswd.svg" alt="Hide Password" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <div className="remember-options">
                             <label className="remember-me">
