@@ -71,28 +71,30 @@ function Signup() {
                                 required
                             />
                         </div>
-                        <div className="password-input-wrapper">
+                        <div className="form-group">
                             <label>Password</label>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                placeholder="Enter your Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                autoComplete="new-password"
-                            />
-                            <button
-                                type="button"
-                                className="password-toggle-icon"
-                                onClick={() => setShowPassword(!showPassword)}
-                                tabIndex="-1"
-                            >
-                                {showPassword ? (
-                                    <img src="./assets/svg/showPswd.svg" alt="Show" />
-                                ) : (
-                                    <img src="./assets/svg/hidePswd.svg" alt="Hide" />
-                                )}
-                            </button>
+                            <div className="password-input-wrapper">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="Enter your Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    autoComplete="new-password"
+                                />
+                                <button
+                                    type="button"
+                                    className="password-toggle-icon"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    tabIndex="-1"
+                                >
+                                    {showPassword ? (
+                                        <img src="./assets/svg/showPswd.svg" alt="Show" />
+                                    ) : (
+                                        <img src="./assets/svg/hidePswd.svg" alt="Hide" />
+                                    )}
+                                </button>
+                            </div>
                         </div>
                         <button type="submit" className="btn-signup">Sign Up</button>
                     </form>
