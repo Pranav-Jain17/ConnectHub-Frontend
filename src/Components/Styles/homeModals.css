@@ -425,11 +425,14 @@ input:checked+.slider:before {
     }
 
     .btn-primary,
-    .btn-cancel,
-    .btn-secondary {
+    .btn-cancel {
         width: 100%;
         text-align: center;
         justify-content: center;
+    }
+
+    .btn-secondary {
+        width: auto;
     }
 
     .setting-item,
