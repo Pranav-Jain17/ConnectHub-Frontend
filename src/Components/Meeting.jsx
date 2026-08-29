@@ -52,7 +52,7 @@ export default function Meeting() {
         toggleVideo,
         localStreamRef,
         peerConnectionsRef,
-    } = useWebRTC(socket, roomId, userId);
+    } = useWebRTC(socket, roomId, userId, userName);
 
     const {
         isScreenSharing,
@@ -147,17 +147,23 @@ export default function Meeting() {
             if (isExitingRef.current) return;
             isExitingRef.current = true;
             
+            console.log("🛑 Meeting ended signal received");
+
             // Stop all local tracks immediately
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
+
+            // Clean up socket manually for clean exit
+            socket.emit('leave-room', roomId, userId);
             
             clearMeetingStorage();
             toast.info("Meeting ended by host");
             navigate("/home", { replace: true });
         };
 
-        const handleUserLeft = ({ userId: leaverId }) => {
+        const handleUserLeft = (data) => {
+            const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
             const name = nameMapRef.current[leaverId] || "A participant";
             toast.info(`${name} left the meeting`);
         };
@@ -172,16 +178,18 @@ export default function Meeting() {
         socket.on("room-full", handleRoomFull);
         socket.on("meeting-ended", handleMeetingEnded);
         socket.on("user-left", handleUserLeft);
-        socket.on("user-joined", handleUserJoined); // Listen for join to sync host
+        socket.on("user-disconnected", handleUserLeft);
+        socket.on("user-joined", handleUserJoined);
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
             socket.off("meeting-ended", handleMeetingEnded);
             socket.off("room-full", handleRoomFull);
             socket.off("user-left", handleUserLeft);
+            socket.off("user-disconnected", handleUserLeft);
             socket.off("user-joined", handleUserJoined);
         };
-    }, [socket, navigate]);
+    }, [socket, navigate, roomId, userId]);
 
     useEffect(() => {
         window.history.pushState(null, document.title, window.location.href);
@@ -249,10 +257,24 @@ export default function Meeting() {
 
     const leaveMeeting = async () => {
         isExitingRef.current = true;
+        
+        // Stop media immediately
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+        }
+
+        // Emit leave room signal for instant update to others
+        socket?.emit('leave-room', roomId, userId);
+
+        const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
+
+        clearMeetingStorage();
+        navigate("/home", { replace: true });
+
         try {
-            const res = await fetch(
-                `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/leave`,
+            await fetch(
+                `https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/leave`,
                 {
                     method: "POST",
                     headers: {
@@ -261,19 +283,8 @@ export default function Meeting() {
                     },
                 }
             );
-
-            if (res.ok || res.status === 404) {
-                toast.success("Left meeting successfully");
-                clearMeetingStorage();
-                navigate("/home", { replace: true });
-            } else {
-                toast.error("Failed to leave meeting");
-                isExitingRef.current = false;
-            }
         } catch (err) {
-            toast.error("Error leaving meeting");
-            clearMeetingStorage();
-            navigate("/home", { replace: true });
+            console.error("Error leaving in background:", err);
         }
     };
 
@@ -287,6 +298,9 @@ export default function Meeting() {
 
         const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
+
+        // Notify others via socket if backend supports this event
+        socket?.emit('end-meeting', { roomId: currentRoomId });
 
         // 2. Clear UI/Storage immediately (Instant redirection)
         clearMeetingStorage();

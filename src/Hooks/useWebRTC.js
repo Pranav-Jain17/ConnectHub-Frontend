@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWebRTC = (socket, roomId, userId, userName) => {
     const [remoteStreams, setRemoteStreams] = useState({});
-    const [remoteNames, setRemoteNames] = useState({});
     const [localStreamReady, setLocalStreamReady] = useState(false);
     const localStreamRef = useRef(null);
     const peerConnectionsRef = useRef({});
@@ -48,11 +47,6 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             delete pendingCandidatesRef.current[remoteUserId];
         }
         setRemoteStreams((prev) => {
-            const next = { ...prev };
-            delete next[remoteUserId];
-            return next;
-        });
-        setRemoteNames((prev) => {
             const next = { ...prev };
             delete next[remoteUserId];
             return next;
@@ -179,14 +173,9 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
 
         const handleUserConnected = async (payload) => {
             const remoteId = typeof payload === 'string' ? payload : payload.userId;
-            const remoteName = typeof payload === 'object' ? payload.userName : null;
 
             if (!remoteId || remoteId === userId) return;
             
-            if (remoteName) {
-                setRemoteNames(prev => ({ ...prev, [remoteId]: remoteName }));
-            }
-
             const pc = createPeerConnection(remoteId);
             try {
                 const offer = await pc.createOffer();
@@ -225,7 +214,9 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
         const handleIceCandidate = async (payload) => {
             const { fromUserId, candidate } = payload || {};
             if (!candidate || !fromUserId) return;
+
             const pc = peerConnectionsRef.current[fromUserId];
+
             if (pc && pc.remoteDescription) {
                 try {
                     await pc.addIceCandidate(new RTCIceCandidate(candidate));
@@ -240,16 +231,25 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             }
         };
 
+        const onUserLeft = (data) => {
+            const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
+            if (leaverId) {
+                handleUserDisconnected(leaverId);
+            }
+        };
+
         socket.on('user-connected', handleUserConnected);
         socket.on('signal', handleSignal);
         socket.on('ice-candidate', handleIceCandidate);
-        socket.on('user-disconnected', handleUserDisconnected);
+        socket.on('user-disconnected', onUserLeft);
+        socket.on('user-left', onUserLeft);
 
         return () => {
             socket.off('user-connected', handleUserConnected);
             socket.off('signal', handleSignal);
             socket.off('ice-candidate', handleIceCandidate);
-            socket.off('user-disconnected', handleUserDisconnected);
+            socket.off('user-disconnected', onUserLeft);
+            socket.off('user-left', onUserLeft);
         };
     }, [socket, roomId, userId, handleUserDisconnected]);
 
@@ -293,7 +293,6 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
         localStream: localStreamRef.current,
         localStreamReady,
         remoteStreams,
-        remoteNames,
         toggleMic,
         toggleVideo,
         peerConnectionsRef,
