@@ -1,5 +1,5 @@
 import { useState, useRef, useLayoutEffect, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import "./Styles/login.css";
 import { toast } from "react-toastify";
 
@@ -234,7 +234,7 @@ function Login() {
 
                     {!isResetMode && (
                         <div className="register-link">
-                            Don’t Have An Account? <a href="/signup">Click Here</a>
+                            Don’t Have An Account? <Link to="/signup">Click Here</Link>
                         </div>
                     )}
                 </div>
