@@ -71,21 +71,68 @@ export const useWebRTC = (livekitUrl, token) => {
         };
     }, [livekitUrl, token]);
 
-    const toggleMic = useCallback(async () => {
-        if (room) {
-            const enabled = !room.localParticipant.isMicrophoneEnabled;
-            await room.localParticipant.setMicrophoneEnabled(enabled);
-            return enabled;
-        }
-    }, [room]);
+   const toggleMic = useCallback(async () => {
+    if (room) {
+        const enabled = !room.localParticipant.isMicrophoneEnabled;
+        await room.localParticipant.setMicrophoneEnabled(enabled);
 
-    const toggleVideo = useCallback(async () => {
-        if (room) {
-            const enabled = !room.localParticipant.isCameraEnabled;
-            await room.localParticipant.setCameraEnabled(enabled);
-            return enabled;
+        // ✅ Sync localStream with the new/current audio track
+        const micPublication = room.localParticipant.getTrackPublication('microphone');
+        const newTrack = micPublication?.track?.mediaStreamTrack;
+
+        if (newTrack) {
+            setLocalStream(prev => {
+                const updated = new MediaStream();
+                prev?.getVideoTracks().forEach(t => updated.addTrack(t));
+                updated.addTrack(newTrack);
+                return updated;
+            });
+        } else if (!enabled) {
+            setLocalStream(prev => {
+                if (!prev) return prev;
+                const updated = new MediaStream();
+                prev.getVideoTracks().forEach(t => updated.addTrack(t));
+                return updated;
+            });
         }
-    }, [room]);
+
+        return enabled;
+    }
+}, [room]);
+
+   const toggleVideo = useCallback(async () => {
+    if (room) {
+        const enabled = !room.localParticipant.isCameraEnabled;
+        await room.localParticipant.setCameraEnabled(enabled);
+
+        // ✅ Sync localStream with the new/current track after toggle
+        const cameraPublication = room.localParticipant.getTrackPublication('camera');
+        const newTrack = cameraPublication?.track?.mediaStreamTrack;
+
+        if (newTrack) {
+            setLocalStream(prev => {
+                const updated = new MediaStream();
+                // Keep existing audio tracks
+                if (prev) {
+                    prev.getAudioTracks().forEach(t => updated.addTrack(t));
+                }
+                // Add the fresh video track
+                updated.addTrack(newTrack);
+                return updated;
+            });
+        } else if (!enabled) {
+            // Camera turned off — remove video track from stream
+            setLocalStream(prev => {
+                if (!prev) return prev;
+                const updated = new MediaStream();
+                prev.getAudioTracks().forEach(t => updated.addTrack(t));
+                return updated;
+            });
+        }
+
+        return enabled;
+    }
+}, [room]);
 
     const toggleScreenShare = useCallback(async () => {
         if (room) {
