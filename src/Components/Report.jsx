@@ -65,7 +65,8 @@ export default function Report() {
 
         const handleReportReady = (data) => {
             console.log("Socket event 'report-ready' received:", data);
-            if (data.meetingId === meetingId) {
+            // Check both meetingId (long ID) and roomId (short code) to match URL parameter
+            if (data.meetingId === meetingId || data.roomId === meetingId) {
                 toast.success("AI report is ready!");
                 fetchReport(true); 
             }
@@ -78,11 +79,12 @@ export default function Report() {
         };
     }, [socket, meetingId, fetchReport]);
 
-    // Layer 2: Polling Fallback (Every 5 seconds if still processing)
+    // Layer 2: Polling Fallback (Every 5 seconds if still processing or in initial 'none' state)
     useEffect(() => {
         let intervalId;
 
-        if (report && report.reportStatus === 'processing') {
+        // Start polling if the report is in 'none' or 'processing' status
+        if (report && (report.reportStatus === 'processing' || report.reportStatus === 'none')) {
             console.log("Starting polling for report completion...");
             intervalId = setInterval(() => {
                 fetchReport(true);
