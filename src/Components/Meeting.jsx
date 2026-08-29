@@ -26,14 +26,19 @@ export default function Meeting() {
     const userName = localStorage.getItem("userName") || "You";
 
     useEffect(() => {
-        const storedRoomId = localStorage.getItem("roomId") || "";
-        const storedUserId = localStorage.getItem("userId") || "";
-        const hostFlag = localStorage.getItem("isHost") === "true";
+        const storedRoomId = localStorage.getItem("roomId");
+        const storedUserId = localStorage.getItem("userId");
+
+        if (!storedRoomId || !storedUserId) {
+            console.warn("🚫 No active meeting found. Redirecting to home.");
+            navigate("/home", { replace: true });
+            return;
+        }
 
         setRoomId(storedRoomId);
         setUserId(storedUserId);
-        setIsHost(hostFlag);
-    }, []);
+        setIsHost(localStorage.getItem("isHost") === "true");
+    }, [navigate]);
 
     const {
         localStream,
@@ -69,6 +74,8 @@ export default function Meeting() {
         localStorage.removeItem("roomId");
         localStorage.removeItem("meetTitle");
         localStorage.removeItem("isHost");
+        // 🔥 wipe browser history state
+        window.history.replaceState(null, "", "/home");
     };
 
     useEffect(() => {
