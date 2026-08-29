@@ -174,11 +174,17 @@ export default function Meeting() {
             }
         };
 
+        const onUserConnected = () => {
+            // Trigger participant refresh when someone connects
+            participants.length > 0 && socket.emit('get-participants'); // Fallback if supported
+        };
+
         socket.on("peer-mic-state", handlePeerMicState);
         socket.on("room-full", handleRoomFull);
         socket.on("meeting-ended", handleMeetingEnded);
         socket.on("user-left", handleUserLeft);
         socket.on("user-disconnected", handleUserLeft);
+        socket.on("user-connected", onUserConnected);
         socket.on("user-joined", handleUserJoined);
 
         return () => {
@@ -187,9 +193,10 @@ export default function Meeting() {
             socket.off("room-full", handleRoomFull);
             socket.off("user-left", handleUserLeft);
             socket.off("user-disconnected", handleUserLeft);
+            socket.off("user-connected", onUserConnected);
             socket.off("user-joined", handleUserJoined);
         };
-    }, [socket, navigate, roomId, userId]);
+    }, [socket, navigate, roomId, userId, participants.length]);
 
     useEffect(() => {
         window.history.pushState(null, document.title, window.location.href);
@@ -263,8 +270,8 @@ export default function Meeting() {
             localStreamRef.current.getTracks().forEach(track => track.stop());
         }
 
-        // Emit leave room signal for instant update to others
-        socket?.emit('leave-room', roomId, userId);
+        // Force disconnect to trigger instant backend cleanup
+        socket?.disconnect();
 
         const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
@@ -296,11 +303,11 @@ export default function Meeting() {
             localStreamRef.current.getTracks().forEach(track => track.stop());
         }
 
+        // Force disconnect to trigger instant backend cleanup
+        socket?.disconnect();
+
         const currentRoomId = roomId;
         const token = localStorage.getItem("loginToken");
-
-        // Notify others via socket if backend supports this event
-        socket?.emit('end-meeting', { roomId: currentRoomId });
 
         // 2. Clear UI/Storage immediately (Instant redirection)
         clearMeetingStorage();

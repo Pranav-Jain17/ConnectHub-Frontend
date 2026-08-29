@@ -40,11 +40,13 @@ export const useParticipants = (roomId, socket) => {
 
         socket.on("update-user-list", handleUpdate);
         socket.on("user-joined", fetchParticipants);
+        socket.on("user-connected", fetchParticipants); // Refresh on WebRTC connect too
         socket.on("user-left", fetchParticipants);
 
         return () => {
             socket.off("update-user-list", handleUpdate);
             socket.off("user-joined", fetchParticipants);
+            socket.off("user-connected", fetchParticipants);
             socket.off("user-left", fetchParticipants);
         };
     }, [socket, fetchParticipants]);

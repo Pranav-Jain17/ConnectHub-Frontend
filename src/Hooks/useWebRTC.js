@@ -176,6 +176,10 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
 
             if (!remoteId || remoteId === userId) return;
             
+            // Fix: Ensure any previous connection for this user is fully cleaned up before re-connecting
+            // This is critical for the "leave and join" scenario to ensure ICE candidates fire on a fresh PC.
+            handleUserDisconnected(remoteId);
+
             const pc = createPeerConnection(remoteId);
             try {
                 const offer = await pc.createOffer();
