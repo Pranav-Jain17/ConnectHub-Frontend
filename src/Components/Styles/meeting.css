@@ -14,6 +14,16 @@ html {
     -webkit-font-smoothing: antialiased;
 }
 
+/* Global scrollbar hiding */
+* {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
 .layout {
     display: flex;
     flex-direction: column;
@@ -27,7 +37,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgb(224, 224, 239);
+    background: #1a73e8; /* Primary Blue */
     padding: 0 24px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     z-index: 100;
@@ -36,7 +46,7 @@ html {
 .logo {
     font-size: 24px;
     font-weight: bold;
-    color: #1a1a1a;
+    color: white;
 }
 
 .content-gap {

@@ -149,7 +149,34 @@ export default function Report() {
         );
     }
 
-    const downloadUrl = `https://connecthub.dikshant-ahalawat.live/meetings/${meetingId}/report/download?token=${localStorage.getItem("loginToken")}`;
+    const handleDownloadPDF = async () => {
+        try {
+            const token = localStorage.getItem("loginToken");
+            const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${meetingId}/report/download`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.message || "Failed to download PDF.");
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Meeting_Report_${meetingId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("Download error:", err);
+            toast.error(err.message);
+        }
+    };
 
     return (
         <div className="report-layout">
@@ -159,14 +186,13 @@ export default function Report() {
             <div className="report-container">
                 <div className="report-header">
                     <h1>Meeting Report</h1>
-                    <a
-                        href={downloadUrl}
+                    <button
+                        onClick={handleDownloadPDF}
                         className="btn-download"
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                        style={{ border: 'none', cursor: 'pointer' }}
                     >
                         Download PDF
-                    </a>
+                    </button>
                 </div>
                 <div className="report-card">
                     <h2>{report.title || "Meeting"}</h2>
