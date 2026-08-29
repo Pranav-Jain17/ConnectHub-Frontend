@@ -48,21 +48,18 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
+    position: relative;
 }
 
-.btn-logout {
-    padding: 8px 16px;
-    border: 1px solid #d0d0d0;
-    background: white;
-    border-radius: 6px;
-    cursor: pointer;
+.user-display-name {
     font-weight: 500;
-    white-space: nowrap;
-    transition: 0.2s ease;
+    color: #4a5568;
+    font-size: 1rem;
 }
 
-.btn-logout:hover {
-    background: #f2f2f2;
+.profile-wrapper {
+    position: relative;
+    cursor: pointer;
 }
 
 .profile-icon img {
@@ -72,6 +69,59 @@ body {
     object-fit: cover;
     cursor: pointer;
     border: 2px solid #e0e0e0;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background: white;
+    min-width: 180px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    border: 1px solid #d0d0d0;
+    padding: 8px 0;
+    z-index: 1001;
+}
+
+.dropdown-user-info {
+    padding: 10px 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.dropdown-user-info strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #223e63;
+}
+
+.dropdown-user-info p {
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: #27ae60;
+}
+
+.dropdown-item {
+    width: 100%;
+    padding: 12px 15px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.dropdown-item:hover {
+    background: #f5f5f5;
+}
+
+.dropdown-item.logout {
+    color: #e74c3c;
+    font-weight: 600;
 }
 
 .home-container {
@@ -84,7 +134,6 @@ body {
     margin: auto;
     overflow: visible;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
 }
 
 .home-left {
@@ -264,57 +313,8 @@ body {
     .app-logo {
         font-size: 1.1rem;
     }
-}
 
-@media (max-height: 500px) and (orientation: landscape) {
-
-    html,
-    body {
-        height: auto !important;
-        overflow-y: auto !important;
-    }
-
-    .home-page {
-        padding-top: 20px;
-        justify-content: flex-start;
-        min-height: auto;
-        overflow-y: auto;
-    }
-
-    .top-nav {
-        position: static;
-    }
-
-    .home-container {
-        flex-direction: column;
-        margin: 10px auto;
-        width: 95%;
-    }
-
-    .home-right {
+    .user-display-name {
         display: none;
-    }
-
-    .home-left {
-        padding: 20px;
-    }
-
-    .home-left h1 {
-        font-size: 1.5rem;
-        margin-bottom: 10px;
-    }
-
-    .home-left p {
-        margin-bottom: 15px;
-    }
-
-    .home-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .btn-join,
-    .btn-create {
-        width: 100%;
     }
 }

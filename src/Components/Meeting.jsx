@@ -1,4 +1,3 @@
-// Meeting.jsx
 import React, { useEffect, useState, useRef } from "react";
 import "./meeting.css";
 import { useSocket } from "../Providers/Socket";
@@ -9,27 +8,23 @@ import { toast } from "react-toastify";
 import ParticipantsPanel from "./ParticipantsPanel";
 
 export default function Meeting() {
-    console.log("🎬 Meeting: Component rendering");
-
     const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
     const [isMicOn, setIsMicOn] = useState(true);
     const [isVideoOn, setIsVideoOn] = useState(true);
     const [isHost, setIsHost] = useState(false);
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+    const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
+    const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
+
+    const { socket } = useSocket();
+    const localVideoRef = useRef(null);
+    const navigate = useNavigate();
 
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
 
-    const { socket } = useSocket();
-    const localVideoRef = useRef(null);
-
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const navigate = useNavigate();
-
-    const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
-    const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
-
-    // Load localStorage data only once
     useEffect(() => {
         const storedRoomId = localStorage.getItem("roomId") || "";
         const storedUserId = localStorage.getItem("userId") || "";
@@ -40,13 +35,6 @@ export default function Meeting() {
         setIsHost(hostFlag);
     }, []);
 
-    // Join the room via socket whenever we (re)connect
-    // useEffect(() => {
-    //     if (!socket || !roomId || !userId) return;
-    //     console.log("📡 Emitting join-room:", { roomId, userId });
-    //     socket.emit("join-room", roomId, userId);
-    // }, [socket, roomId, userId]);
-
     const {
         localStream,
         localStreamReady,
@@ -55,11 +43,12 @@ export default function Meeting() {
         toggleVideo
     } = useWebRTC(socket, roomId, userId);
 
+    const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
+
     useEffect(() => {
         if (!localStreamReady) return;
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
-            console.log("✅ Local video displayed");
         }
     }, [localStreamReady, localStream]);
 
@@ -70,6 +59,7 @@ export default function Meeting() {
         if (!roomId) return;
         try {
             await navigator.clipboard.writeText(roomId);
+            toast.success("Room ID copied");
         } catch (err) {
             console.error("❌ Failed to copy:", err);
         }
@@ -81,12 +71,10 @@ export default function Meeting() {
         localStorage.removeItem("isHost");
     };
 
-    // Listen for server signal that the meeting ended
     useEffect(() => {
         if (!socket) return;
 
         const handleRoomFull = () => {
-            console.warn("Room is full. Redirecting home.");
             toast.error("This room is full (Max 2 people).");
             navigate("/home");
         };
@@ -103,12 +91,42 @@ export default function Meeting() {
         return () => {
             socket.off("meeting-ended", handleMeetingEnded);
             socket.off("room-full", handleRoomFull);
-        }
-
+        };
     }, [socket, navigate]);
+
+    useEffect(() => {
+        // 1. Manually push a state so there is a "cushion" to go back from
+        window.history.pushState(null, null, window.location.pathname);
+
+        const handlePopState = (event) => {
+            // 2. Immediately push it back to keep the user on this URL
+            window.history.pushState(null, null, window.location.pathname);
+
+            // 3. Logic to close panels or show modal
+            if (isChatOpen) {
+                setIsChatOpen(false);
+            } else if (isParticipantsOpen) {
+                setIsParticipantsOpen(false);
+            } else {
+                if (isHost) {
+                    setShowEndConfirmModal(true);
+                } else {
+                    setShowLeaveConfirmModal(true);
+                }
+            }
+        };
+
+        window.addEventListener("popstate", handlePopState);
+        return () => window.removeEventListener("popstate", handlePopState);
+    }, [isChatOpen, isParticipantsOpen, isHost]);
 
     const leaveMeeting = async () => {
         const token = localStorage.getItem("loginToken");
+        const finalizeLeave = () => {
+            clearMeetingStorage();
+            navigate("/home", { replace: true });
+        };
+
         try {
             const res = await fetch(
                 `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/leave`,
@@ -121,22 +139,17 @@ export default function Meeting() {
                 }
             );
 
-            if (res.status === 404) {
-                clearMeetingStorage();
-                navigate("/home");
-                return;
-            }
-            if (!res.ok) {
+            if (res.ok || res.status === 404) {
+                toast.success("Left meeting successfully");
+                finalizeLeave();
+            } else {
                 const data = await res.json().catch(() => ({}));
                 toast.error(data.message || "Failed to leave meeting");
-                return;
+                finalizeLeave();
             }
-
-            clearMeetingStorage();
-            toast.success("Left meeting successfully");
-            navigate("/home");
         } catch (err) {
             toast.error("Error leaving meeting");
+            finalizeLeave();
         }
     };
 
@@ -155,20 +168,19 @@ export default function Meeting() {
             );
 
             const data = await res.json().catch(() => ({}));
-            if (!res.ok) {
-                toast.error(data.message || "Failed to end meeting");
-                return;
-            }
 
-            clearMeetingStorage();
-            navigate("/home");
+            if (res.ok) {
+                clearMeetingStorage();
+                toast.info("Meeting ended successfully");
+                navigate("/home", { replace: true });
+            } else {
+                toast.error(data.message || "Failed to end meeting");
+            }
         } catch (err) {
             toast.error("Error ending meeting");
+            navigate("/home", { replace: true });
         }
     };
-
-    const isAlone = Object.keys(remoteStreams).length === 0;
-    const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
 
     return (
         <div className="layout">
@@ -190,12 +202,11 @@ export default function Meeting() {
                             src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
                             alt=""
                         />
-                        You
-                        {isHost && " (Host)"}
+                        {userName} {isHost && "(Host)"}
                     </span>
                 </div>
 
-                {Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
+                {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
                     <RemoteVideo key={remoteUserId} stream={stream} userId={remoteUserId} />
                 ))}
             </main>
@@ -290,7 +301,7 @@ export default function Meeting() {
     );
 }
 
-function RemoteVideo({ stream, userId, remoteUserName }) {
+function RemoteVideo({ stream }) {
     const videoRef = useRef(null);
     const [isMicOn, setIsMicOn] = useState(true);
 
@@ -321,14 +332,10 @@ function RemoteVideo({ stream, userId, remoteUserName }) {
             <video ref={videoRef} autoPlay playsInline className="remote-video" />
             <span className="video-label">
                 <img
-                    src={
-                        isMicOn
-                            ? "/assets/svg/mic.svg"
-                            : "/assets/svg/mic-off.svg"
-                    }
+                    src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
                     alt=""
                 />
-                {remoteUserName}
+                Remote User
             </span>
         </div>
     );
