@@ -64,17 +64,39 @@ function Home() {
         return data;
     };
 
+    const LIVEKIT_URL = "wss://connecthub-7c2knk6r.livekit.cloud";
+
     const handleCreateMeeting = async (title) => {
         try {
-            const data = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings', 'POST', {
+            // Step 1: Create the meeting to get a roomId
+            const createData = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings', 'POST', {
                 title: title,
                 scheduledAt: new Date().toISOString()
             });
-            localStorage.setItem("roomId", data.roomId);
+            console.log("[Home.jsx] handleCreateMeeting - Received data from /meetings API:", createData);
+
+            const { roomId } = createData;
+            if (!roomId) {
+                toast.error("Failed to create the meeting room.");
+                return;
+            }
+
+            // Step 2: Join the newly created room to get the token for the host
+            const userId = localStorage.getItem("userId");
+            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
+
+            if (!joinData.token) {
+                toast.error("Failed to retrieve a valid meeting token from the server.");
+                return;
+            }
+
+            // Step 3: Store credentials and navigate
+            localStorage.setItem("roomId", roomId);
             localStorage.setItem("meetTitle", title);
             localStorage.setItem("isHost", "true");
-            localStorage.setItem("livekitToken", data.token);
-            localStorage.setItem("livekitUrl", data.livekitUrl);
+            localStorage.setItem("livekitToken", joinData.token);
+            localStorage.setItem("livekitUrl", joinData.livekitUrl || LIVEKIT_URL);
+            
             navigate("/meeting");
             setModalType(null);
         } catch (err) {
@@ -90,11 +112,17 @@ function Home() {
                 return;
             }
             const data = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
+            
+            if (!data.token) {
+                toast.error("Failed to retrieve a valid meeting token from the server.");
+                return;
+            }
+
             localStorage.setItem("roomId", roomId);
             localStorage.setItem("meetTitle", data?.meeting?.title || `Meeting ${roomId}`);
             localStorage.setItem("isHost", "false");
             localStorage.setItem("livekitToken", data.token);
-            localStorage.setItem("livekitUrl", data.livekitUrl);
+            localStorage.setItem("livekitUrl", data.livekitUrl || LIVEKIT_URL);
             navigate("/meeting");
             setModalType(null);
         } catch (err) {
@@ -207,6 +235,13 @@ function Home() {
                     create: handleCreateMeeting,
                     join: handleJoinMeeting,
                     changePassword: handleChangePassword
+                }}
+            />
+        </div>
+    );
+}
+
+export default Home;d
                 }}
             />
         </div>

@@ -6,6 +6,7 @@ export const useWebRTC = (livekitUrl, token) => {
     const [localStream, setLocalStream] = useState(null);
     const [remoteStreams, setRemoteStreams] = useState(new Map());
     const [localStreamReady, setLocalStreamReady] = useState(false);
+    const [isScreenSharing, setIsScreenSharing] = useState(false);
 
     useEffect(() => {
         const connectToLiveKit = async () => {
@@ -60,6 +61,7 @@ export const useWebRTC = (livekitUrl, token) => {
         };
 
         if (livekitUrl && token) {
+            console.log("[useWebRTC.js] useEffect triggered. Calling connectToLiveKit with:", { livekitUrl, token });
             connectToLiveKit();
         }
 
@@ -86,6 +88,14 @@ export const useWebRTC = (livekitUrl, token) => {
         }
     }, [room]);
 
+    const toggleScreenShare = useCallback(async () => {
+        if (room) {
+            const enabled = !isScreenSharing;
+            await room.localParticipant.setScreenShareEnabled(enabled);
+            setIsScreenSharing(enabled);
+        }
+    }, [room, isScreenSharing]);
+
     return {
         localStream,
         localStreamReady,
@@ -93,6 +103,8 @@ export const useWebRTC = (livekitUrl, token) => {
         remoteNames: {}, // This can be adapted if you pass participant names
         toggleMic,
         toggleVideo,
+        isScreenSharing,
+        toggleScreenShare,
         // Keep the old return values but commented out
         // peerConnectionsRef: useRef({}),
         // localStreamRef: useRef(null),

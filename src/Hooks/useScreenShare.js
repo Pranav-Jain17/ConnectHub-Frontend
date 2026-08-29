@@ -1,3 +1,4 @@
+/*
 import { useRef, useState } from "react";
 
 export default function useScreenShare({
@@ -105,3 +106,4 @@ export default function useScreenShare({
         stopScreenShare,
     };
 }
+*/

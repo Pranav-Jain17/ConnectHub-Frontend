@@ -54,19 +54,9 @@ export default function Meeting() {
         remoteStreams,
         toggleMic,
         toggleVideo,
+        isScreenSharing,
+        toggleScreenShare,
     } = useWebRTC(livekitUrl, livekitToken);
-
-    // const {
-    //     isScreenSharing,
-    //     startScreenShare,
-    //     stopScreenShare,
-    // } = useScreenShare({
-    //     peerConnectionsRef,
-    //     localStreamRef,
-    //     localVideoRef,
-    //     socket,
-    //     roomId
-    // });
 
     const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
 
@@ -100,6 +90,7 @@ export default function Meeting() {
         const storedUserId = localStorage.getItem("userId");
         const url = localStorage.getItem("livekitUrl");
         const token = localStorage.getItem("livekitToken");
+        console.log("[Meeting.jsx] Component mounted. Retrieved from localStorage:", { url, token });
 
         if (!storedRoomId || !storedUserId || !url || !token) {
             navigate("/home", { replace: true });
@@ -175,7 +166,7 @@ export default function Meeting() {
                     try {
                         const token = localStorage.getItem("loginToken");
                         toast.info("Uploading audio for report...");
-                        
+
                         fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
                             method: 'POST',
                             headers: {
@@ -222,34 +213,11 @@ export default function Meeting() {
             setPeerMicState((prev) => ({ ...prev, [peerId]: isMicOn }));
         };
 
-        // const handleRoomFull = () => {
-        //     toast.error("This room is full (Max 2 people).");
-        //     navigate("/home");
-        // };
-
-        // const handleUserLeft = (data) => {
-        //     const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
-            
-        //     if (leaverId === hostUserId && !isHost) {
-        //         toast.info("The host has ended the meeting.");
-        //         clearMeetingStorage();
-        //         navigate(`/report/${roomId}`, { replace: true });
-        //         return;
-        //     }
-
-        //     const name = nameMapRef.current[leaverId] || "A participant";
-        //     toast.info(`${name} left the meeting`);
-        // };
-
         const handleUserJoined = (data) => {
             if (data.hostUserId) {
                 setHostUserId(data.hostUserId);
             }
         };
-
-        // const onUserConnected = () => {
-        //     participants.length > 0 && socket.emit('get-participants');
-        // };
 
         const handleMeetingEnded = (data) => {
             if (data && data.meetingId) {
@@ -260,19 +228,11 @@ export default function Meeting() {
         };
 
         socket.on("peer-mic-state", handlePeerMicState);
-        // socket.on("room-full", handleRoomFull);
-        // socket.on("user-left", handleUserLeft);
-        // socket.on("user-disconnected", handleUserLeft);
-        // socket.on("user-connected", onUserConnected);
         socket.on("user-joined", handleUserJoined);
         socket.on("meeting-ended", handleMeetingEnded);
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
-            // socket.off("room-full", handleRoomFull);
-            // socket.off("user-left", handleUserLeft);
-            // socket.off("user-disconnected", handleUserLeft);
-            // socket.off("user-connected", onUserConnected);
             socket.off("user-joined", handleUserJoined);
             socket.off("meeting-ended", handleMeetingEnded);
         };
@@ -320,10 +280,12 @@ export default function Meeting() {
     const handleMicToggle = async () => {
         const newState = await toggleMic();
         setIsMicOn(newState);
-        socket?.emit("mic-toggle", { isMicOn: newState });
     };
 
-    const handleVideoToggle = () => setIsVideoOn(toggleVideo());
+    const handleVideoToggle = async () => {
+        const newState = await toggleVideo();
+        setIsVideoOn(newState);
+    };
 
     const copyRoomId = async () => {
         if (!roomId) return;
@@ -346,7 +308,7 @@ export default function Meeting() {
 
     const leaveMeeting = async () => {
         isExitingRef.current = true;
-        
+
         if (localStream) {
             localStream.getTracks().forEach(track => track.stop());
         }
@@ -390,27 +352,9 @@ export default function Meeting() {
         if (action === 'info') setShowInfoModal(true);
         if (action === 'chat') setIsChatOpen(true);
         if (action === 'participants') setIsParticipantsOpen(true);
-        // if (action === 'screen-share') {
-        //     if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
-        //         toast.error("Your browser does not support screen sharing.");
-        //         return;
-        //     }
-        //     try {
-        //         if (isScreenSharing) {
-        //             await stopScreenShare();
-        //         } else {
-        //             await startScreenShare();
-        //         }
-        //     } catch (err) {
-        //         if (err.name === 'NotAllowedError') {
-        //             toast.error("Permission denied. You must click 'Start now' on the system popup.");
-        //         } else if (err.name === 'NotFoundError') {
-        //             toast.error("No screen found to share.");
-        //         } else {
-        //             toast.error(`Error: ${err.message || "Failed to start"}`);
-        //         }
-        //     }
-        // }
+        if (action === 'screen-share') {
+            await toggleScreenShare();
+        }
     };
 
     return (
@@ -439,8 +383,8 @@ export default function Meeting() {
                 localStreamReady={localStreamReady}
                 isVideoOn={isVideoOn}
                 handleVideoToggle={handleVideoToggle}
-                // isScreenSharing={isScreenSharing}
-                // onScreenShareClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                isScreenSharing={isScreenSharing}
+                onScreenShareClick={toggleScreenShare}
                 onEndClick={() => isHost ? setShowEndConfirmModal(true) : setShowLeaveConfirmModal(true)}
                 onInfoClick={() => setShowInfoModal(true)}
                 onChatClick={() => setIsChatOpen(true)}
@@ -449,7 +393,6 @@ export default function Meeting() {
                 setShowMoreMenu={setShowMoreMenu}
                 handleMobileAction={handleMobileAction}
             />
-
             <ChatPanel
                 isOpen={isChatOpen}
                 onClose={() => setIsChatOpen(false)}
@@ -496,4 +439,4 @@ export default function Meeting() {
             )}
         </div>
     );
-}
+    }
