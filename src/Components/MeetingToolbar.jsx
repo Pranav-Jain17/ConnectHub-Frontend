@@ -45,6 +45,7 @@ export default function MeetingToolbar({
                     <img src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"} alt="" />
                 </button>
 
+                {/* Desktop Screen Share Button - Hidden on Mobile via CSS usually */}
                 <button
                     className={`btn screen-btn ${isScreenSharing ? "btn-off" : ""}`}
                     onClick={onScreenShareClick}
@@ -91,6 +92,10 @@ export default function MeetingToolbar({
                             <div className="menu-item" onClick={() => handleMobileAction('participants')}>
                                 <img src="/assets/svg/participants.svg" alt="" />
                                 <span>Participants</span>
+                            </div>
+                            <div className="menu-item" onClick={() => handleMobileAction('screen-share')}>
+                                <img src="/assets/svg/screen-share.svg" alt="Share" />
+                                <span>{isScreenSharing ? "Stop Sharing" : "Share Screen"}</span>
                             </div>
                         </div>
                     )}

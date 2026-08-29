@@ -293,16 +293,30 @@ export default function Meeting() {
         }
     };
 
-    const handleMobileAction = (action) => {
+    const handleMobileAction = async (action) => {
         setShowMoreMenu(false);
         if (action === 'info') setShowInfoModal(true);
         if (action === 'chat') setIsChatOpen(true);
         if (action === 'participants') setIsParticipantsOpen(true);
         if (action === 'screen-share') {
-            if (isScreenSharing) {
-                stopScreenShare();
-            } else {
-                startScreenShare();
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+                toast.error("Your browser does not support screen sharing.");
+                return;
+            }
+            try {
+                if (isScreenSharing) {
+                    await stopScreenShare();
+                } else {
+                    await startScreenShare();
+                }
+            } catch (err) {
+                if (err.name === 'NotAllowedError') {
+                    toast.error("Permission denied. You must click 'Start now' on the system popup.");
+                } else if (err.name === 'NotFoundError') {
+                    toast.error("No screen found to share.");
+                } else {
+                    toast.error(`Error: ${err.message || "Failed to start"}`);
+                }
             }
         }
     };
