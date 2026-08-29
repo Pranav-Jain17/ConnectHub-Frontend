@@ -269,8 +269,8 @@ export default function Meeting() {
         const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
             ? 'audio/webm;codecs=opus'
             : MediaRecorder.isTypeSupported('audio/webm')
-            ? 'audio/webm'
-            : '';
+                ? 'audio/webm'
+                : '';
         const options = mimeType ? { mimeType } : {};
 
         let chunkIndex = 0;
@@ -560,7 +560,7 @@ export default function Meeting() {
     if (isRejoining && !livekitToken) {
         return (
             <div className="layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: '#fff', fontSize: '1.2rem' }}>Rejoining meeting...</p>
+                <p style={{ color: '#fff', fontSize: '1.2rem' }}>Joining meeting...</p>
             </div>
         );
     }
