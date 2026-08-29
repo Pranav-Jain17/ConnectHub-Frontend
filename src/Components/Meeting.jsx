@@ -298,6 +298,13 @@ export default function Meeting() {
         if (action === 'info') setShowInfoModal(true);
         if (action === 'chat') setIsChatOpen(true);
         if (action === 'participants') setIsParticipantsOpen(true);
+        if (action === 'screen-share') {
+            if (isScreenSharing) {
+                stopScreenShare();
+            } else {
+                startScreenShare();
+            }
+        }
     };
 
     return (

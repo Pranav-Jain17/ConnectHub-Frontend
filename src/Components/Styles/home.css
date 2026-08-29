@@ -10,6 +10,7 @@ body {
     min-height: 100dvh;
     background: rgb(224, 224, 239);
     overflow: hidden;
+    padding-bottom: 0;
 }
 
 .home-page {
@@ -18,7 +19,8 @@ body {
     height: 100dvh;
     background: rgb(224, 224, 239);
     padding-top: 70px;
-    overflow-y: auto;
+    overflow: hidden;
+    padding-bottom: 0;
 }
 
 .top-nav {
@@ -204,35 +206,48 @@ body {
 
 @media (max-width: 992px) {
     .home-container {
+        display: flex;
         flex-direction: column;
         width: 95%;
         margin: 20px auto;
-        margin-bottom: 120px;
+        overflow: hidden;
+        height: calc(100dvh-110px);
     }
 
     .home-right {
         order: -1;
-        padding: 30px;
-        max-height: 40vh;
+        padding: 20px;
+        height: 35%;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .home-left {
-        padding: 30px 20px 60px 20px;
+        padding: 20px;
         text-align: center;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .home-buttons {
         justify-content: center;
+        margin-top: auto;
+        padding-bottom: 10px;
     }
 
     .home-right img {
         max-height: 100%;
+        max-width: 100%;
         object-fit: contain;
     }
 
     .home-left h1 {
-        font-size: 2rem;
-        margin-bottom: 15px;
+        font-size: 1.8rem;
+        margin-bottom: 10px;
     }
 }
 
