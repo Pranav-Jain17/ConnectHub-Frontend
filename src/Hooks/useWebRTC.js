@@ -75,27 +75,6 @@ export const useWebRTC = (livekitUrl, token) => {
     if (room) {
         const enabled = !room.localParticipant.isMicrophoneEnabled;
         await room.localParticipant.setMicrophoneEnabled(enabled);
-
-        // ✅ Sync localStream with the new/current audio track
-        const micPublication = room.localParticipant.getTrackPublication('microphone');
-        const newTrack = micPublication?.track?.mediaStreamTrack;
-
-        if (newTrack) {
-            setLocalStream(prev => {
-                const updated = new MediaStream();
-                prev?.getVideoTracks().forEach(t => updated.addTrack(t));
-                updated.addTrack(newTrack);
-                return updated;
-            });
-        } else if (!enabled) {
-            setLocalStream(prev => {
-                if (!prev) return prev;
-                const updated = new MediaStream();
-                prev.getVideoTracks().forEach(t => updated.addTrack(t));
-                return updated;
-            });
-        }
-
         return enabled;
     }
 }, [room]);
