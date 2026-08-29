@@ -84,14 +84,26 @@ export default function Meeting() {
     useEffect(() => {
         if (!socket) return;
 
+        const handleRoomFull = () => {
+            console.warn("Room is full. Redirecting home.");
+            toast.error("This room is full (Max 2 people).");
+            navigate("/home");
+        };
+
         const handleMeetingEnded = () => {
             clearMeetingStorage();
             toast.info("Meeting ended by host");
             navigate("/home");
         };
 
+        socket.on("room-full", handleRoomFull);
         socket.on("meeting-ended", handleMeetingEnded);
-        return () => void socket.off("meeting-ended", handleMeetingEnded);
+
+        return () => {
+            socket.off("meeting-ended", handleMeetingEnded);
+            socket.off("room-full", handleRoomFull);
+        }
+
     }, [socket, navigate]);
 
     const leaveMeeting = async () => {
