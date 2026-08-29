@@ -15,7 +15,7 @@ function Signup() {
         setError(null);
 
         try {
-            const response = await fetch('http://3.110.101.93:3000/auth/signup', {
+            const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

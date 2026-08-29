@@ -20,7 +20,7 @@ export const SocketProvider = (props) => {
             console.log('🔐 Token (first 20 chars):', token.substring(0, 20) + '...');
         }
 
-        const socketInstance = io('http://3.110.101.93:3000', {
+        const socketInstance = io('https://connecthub.dikshant-ahalawat.live', {
             auth: {
                 token: token
             },
@@ -28,7 +28,7 @@ export const SocketProvider = (props) => {
         });
 
         console.log('✅ Socket instance created');
-        console.log('🌐 Server URL: http://3.110.101.93:3000'); // ✅ corrected log
+        console.log('🌐 Server URL: https://connecthub.dikshant-ahalawat.live'); // ✅ corrected log
         console.log('🔌 Auto-connect: false');
 
         return socketInstance;
@@ -46,7 +46,7 @@ export const SocketProvider = (props) => {
 
         if (token) {
             console.log('✅ Token found - attempting connection...');
-            console.log('   Connecting to: http://3.110.101.93:3000');
+            console.log('   Connecting to: https://connecthub.dikshant-ahalawat.live');
 
             socket.connect();
             console.log('📡 socket.connect() called');

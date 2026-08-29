@@ -16,7 +16,7 @@ function Home({ userId }) {
             scheduledAt: now
         };
 
-        const response = await fetch('http://3.110.101.93:3000/meetings', {
+        const response = await fetch('https://connecthub.dikshant-ahalawat.live/meetings', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ function Home({ userId }) {
 
     const joinMeeting = async (userId, roomId, loginToken) => {
         const response = await fetch(
-            `http://3.110.101.93:3000/meetings/${userId}/join`,
+            `https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`,
             {
                 method: 'POST',
                 headers: {
@@ -57,7 +57,7 @@ function Home({ userId }) {
     };
 
     const logoutUser = async (loginToken) => {
-        const response = await fetch('http://3.110.101.93:3000/auth/logout', {
+        const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/logout', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

@@ -138,7 +138,7 @@ export default function Meeting() {
 
         const checkMeetingStatus = async () => {
             try {
-                const res = await fetch(`http://3.110.101.93:3000/meetings/${roomId}/status`);
+                const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/status`);
                 if (!res.ok) {
                     // treat as ended / not found room
                     throw new Error('Room not found / ended');
@@ -179,7 +179,7 @@ export default function Meeting() {
         const handleReconnect = () => {
             console.log('🔄 socket reconnected — checking meeting status');
             if (!roomId) return;
-            fetch(`http://3.110.101.93:3000/meetings/${roomId}/status`)
+            fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/status`)
                 .then(res => {
                     if (!res.ok) throw new Error('Room fetch failed');
                     return res.json();
@@ -215,7 +215,7 @@ export default function Meeting() {
         }
         try {
             console.log(`🚪 Leaving meeting (participant) | roomId: ${roomId}`);
-            const res = await fetch(`http://3.110.101.93:3000/meetings/${roomId}/leave`, {
+            const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/leave`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -256,7 +256,7 @@ export default function Meeting() {
         }
         try {
             console.log(`🛑 Ending meeting (host) | roomId: ${roomId}`);
-            const res = await fetch(`http://3.110.101.93:3000/meetings/${roomId}/end`, {
+            const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/end`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",

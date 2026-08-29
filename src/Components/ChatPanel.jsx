@@ -35,7 +35,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
                 console.log("📡 Fetching history from API...");
 
-                const res = await fetch(`http://3.110.101.93:3000/chat/${roomId}`, {
+                const res = await fetch(`https://connecthub.dikshant-ahalawat.live/chat/${roomId}`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,
                         "Content-Type": "application/json"
