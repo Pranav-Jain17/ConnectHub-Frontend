@@ -139,36 +139,56 @@ export default function Meeting() {
         }
 
         if (isHost && localStream) {
-            mediaRecorderRef.current = new MediaRecorder(localStream, { mimeType: 'audio/webm' });
+            const audioTracks = localStream.getAudioTracks();
+            if (audioTracks.length === 0) {
+                console.warn("No audio tracks found to record.");
+                return;
+            }
 
-            mediaRecorderRef.current.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
+            const audioStream = new MediaStream(audioTracks);
+            const options = { mimeType: 'audio/webm' };
 
-            mediaRecorderRef.current.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                const formData = new FormData();
-                formData.append('audio', audioBlob, 'meeting.webm');
-                formData.append('meetingId', roomId);
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                console.warn(`${options.mimeType} is not supported. Falling back to default.`);
+                delete options.mimeType;
+            }
 
-                try {
-                    const token = localStorage.getItem("loginToken");
-                    await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
-                        body: formData,
-                    });
-                } catch (error) {
-                    console.error('Failed to upload audio:', error);
-                    toast.error('Could not save meeting report.');
-                }
-            };
+            try {
+                mediaRecorderRef.current = new MediaRecorder(audioStream, options);
 
-            mediaRecorderRef.current.start();
+                mediaRecorderRef.current.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunksRef.current.push(event.data);
+                    }
+                };
+
+                mediaRecorderRef.current.onstop = async () => {
+                    const audioBlob = new Blob(audioChunksRef.current, { type: options.mimeType || 'audio/webm' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'meeting.webm');
+                    formData.append('meetingId', roomId);
+
+                    try {
+                        const token = localStorage.getItem("loginToken");
+                        toast.info("Uploading report...");
+                        await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                            body: formData,
+                        });
+                    } catch (error) {
+                        console.error('Failed to upload audio:', error);
+                        toast.error('Could not save meeting report.');
+                    }
+                };
+
+                mediaRecorderRef.current.start();
+            } catch (error) {
+                console.error("Error starting MediaRecorder:", error);
+                toast.error("Could not start recording. Meeting reports will be unavailable.");
+            }
         }
     }, [localStreamReady, localStream, isHost, roomId]);
 
