@@ -39,11 +39,10 @@ function Login() {
             const data = await response.json();
             const loginToken = data.token;
 
-            if (rememberMe) {
-                localStorage.setItem('loginToken', loginToken);
-            } else {
+            if (!rememberMe) {
                 sessionStorage.setItem('loginToken', loginToken);
             }
+            localStorage.setItem('loginToken', loginToken);
             navigate('/home');
         } catch (err) {
             setError('! Enter a valid email/username or password');
@@ -68,6 +67,7 @@ function Login() {
                                     value="email"
                                     checked={useEmail}
                                     onChange={() => setUseEmail(true)}
+                                    autoComplete='username'
                                 />
                                 Login with Email
                             </label>
@@ -78,6 +78,7 @@ function Login() {
                                     value="username"
                                     checked={!useEmail}
                                     onChange={() => setUseEmail(false)}
+                                    autoComplete="username"
                                 />
                                 Login with Username
                             </label>
@@ -90,6 +91,7 @@ function Login() {
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 required
+                                autoComplete={useEmail ? "email" : "username"}
                             />
                         </div>
                         <div className="form-group">
@@ -100,6 +102,7 @@ function Login() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                autoComplete="current-password"
                             />
                         </div>
                         <div className="remember-options">
