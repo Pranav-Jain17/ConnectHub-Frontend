@@ -11,73 +11,86 @@ body {
     align-items: center;
     min-height: 100vh;
     background: rgb(224, 224, 239);
+    padding: 20px;
 }
 
 .signup-container {
     display: flex;
-    flex-wrap: wrap;
     flex-direction: row;
-    width: 90%;
-    max-width: 1200px;
+    width: 100%;
+    max-width: 1000px;
     background: #fff;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-height: 0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .signup-image-side {
-    flex: 0 0 50%;
-    max-width: 50%;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px;
-    box-sizing: border-box;
-    min-height: 0;
-    min-width: 0;
     background-color: rgb(193, 193, 251);
 }
 
 .signup-image-side img {
     width: 100%;
-    max-width: 400px;
+    max-width: 350px;
     height: auto;
     display: block;
 }
 
 .signup-form-side {
-    flex: 0 0 50%;
-    max-width: 50%;
-    padding: 60px 40px;
-    box-sizing: border-box;
-    min-height: 0;
-    min-width: 0;
+    flex: 1;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .signup-form-side h2 {
-    font-size: 2.5rem;
-    margin-bottom: 40px;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+    margin-bottom: 30px;
     color: #223e63;
+    line-height: 1.2;
+}
+
+.error-message {
+    color: #d93025;
+    background: #fce8e6;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    border: 1px solid #f5c6cb;
 }
 
 .signup-form .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .signup-form .form-group label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     font-weight: 500;
     color: #4a5568;
+    font-size: 0.95rem;
 }
 
 .signup-form .form-group input {
     width: 100%;
-    padding: 12px 15px;
+    padding: 12px 14px;
     font-size: 1rem;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
     outline: none;
+    transition: border-color 0.2s;
     box-sizing: border-box;
+}
+
+.signup-form .form-group input:focus {
+    border-color: #1a73e8;
 }
 
 .btn-signup {
@@ -87,54 +100,97 @@ body {
     color: #fff;
     background-color: #1a73e8;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-signup:hover {
+    background-color: #155fc2;
 }
 
 .login-link {
-    margin-top: 20px;
+    margin-top: 25px;
     font-size: 0.95rem;
     color: #4a5568;
+    text-align: center;
 }
 
 .login-link a {
     color: #1a73e8;
     text-decoration: none;
+    font-weight: 600;
 }
 
-.error-message {
-    color: #e53e3e;
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-}
+@media (max-width: 900px) {
+    .signup-container {
+        max-width: 500px;
+        flex-direction: column;
+    }
 
-@media (max-width: 768px) {
+    .signup-image-side {
+        padding: 30px;
+    }
 
-    .signup-image-side,
+    .signup-image-side img {
+        max-width: 180px;
+    }
+
     .signup-form-side {
-        flex: 0 0 100%;
+        padding: 30px 25px;
+    }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+    .signup-page {
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .signup-container {
+        flex-direction: row;
         max-width: 100%;
-        padding: 30px 20px;
+        border-radius: 0;
+    }
+
+    .signup-image-side {
+        display: none;
+    }
+
+    .signup-form-side {
+        padding: 20px;
     }
 
     .signup-form-side h2 {
-        font-size: 2rem;
-        margin-bottom: 30px;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+
+    .signup-form .form-group {
+        margin-bottom: 10px;
     }
 }
 
 @media (max-width: 480px) {
+    .signup-page {
+        padding: 10px;
+    }
+
+    .signup-container {
+        box-shadow: none;
+        background: transparent;
+    }
+
     .signup-form-side {
-        padding: 20px 15px;
+        background: white;
+        border-radius: 12px;
+        padding: 30px 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
     }
 
-    .signup-form .form-group input {
-        padding: 10px 12px;
-        font-size: 0.9rem;
-    }
-
-    .btn-signup {
-        padding: 12px;
-        font-size: 1rem;
+    .signup-image-side {
+        display: none;
     }
 }
