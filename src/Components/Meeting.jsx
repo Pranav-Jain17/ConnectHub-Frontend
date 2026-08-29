@@ -62,6 +62,31 @@ export default function Meeting() {
         if (socket && !socket.connected) socket.connect();
     }, [socket]);
 
+    // Once socket connects (or reconnects), join the room for real-time events
+    useEffect(() => {
+        if (!socket || !roomId) return;
+
+        const joinRoom = () => {
+            const storedUserId = localStorage.getItem("userId");
+            const storedUserName = localStorage.getItem("userName");
+            if (storedUserId) {
+                socket.emit('join-room', roomId, storedUserId, storedUserName);
+            }
+        };
+
+        // If already connected, join immediately
+        if (socket.connected) {
+            joinRoom();
+        }
+
+        // Also handle reconnections
+        socket.on('connect', joinRoom);
+
+        return () => {
+            socket.off('connect', joinRoom);
+        };
+    }, [socket, roomId]);
+
     const {
         localStream,
         localStreamReady,
@@ -143,6 +168,12 @@ export default function Meeting() {
                 localStorage.setItem("isHost", String(joinData.meeting?.host_id === storedUserId));
                 if (joinData.meeting?.title) {
                     localStorage.setItem("meetTitle", joinData.meeting.title);
+                }
+
+                // Join the socket room so we receive real-time events
+                // (user-joined, user-left, meeting-ended, etc.)
+                if (socket && socket.connected) {
+                    socket.emit('join-room', roomId, storedUserId, localStorage.getItem("userName"));
                 }
 
             } catch (error) {
@@ -358,7 +389,20 @@ export default function Meeting() {
         const handleMeetingEnded = (data) => {
             if (data && data.meetingId) {
                 toast.info("The host has ended the meeting.");
+
+                // Stop all local media tracks
+                if (localStream) {
+                    localStream.getTracks().forEach(track => track.stop());
+                }
+
+                // Clean up all audio elements (LiveKit appended)
+                document.querySelectorAll('audio').forEach(el => {
+                    el.srcObject = null;
+                    el.remove();
+                });
+
                 clearMeetingStorage();
+                socket?.disconnect();
                 navigate(`/report/${data.meetingId}`, { replace: true });
             }
         };
