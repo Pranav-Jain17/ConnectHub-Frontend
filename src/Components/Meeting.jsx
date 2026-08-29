@@ -173,20 +173,29 @@ export default function Meeting() {
                         const token = localStorage.getItem("loginToken");
                         toast.info("Uploading audio for report...");
                         
-                        const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
+                        // Fire and forget the fetch (or handle it in background)
+                        // and navigate immediately so user doesn't wait for upload completion
+                        fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
                             method: 'POST',
                             headers: {
                                 Authorization: `Bearer ${token}`,
                             },
                             body: formData,
+                        }).then(async (res) => {
+                            if (res.ok) {
+                                toast.success("Upload complete. AI is processing...");
+                            } else {
+                                const errData = await res.json().catch(() => ({ message: "Unknown server error" }));
+                                toast.error(`Error: ${errData.message || res.statusText}`);
+                            }
+                        }).catch((error) => {
+                            console.error('Failed to upload audio:', error);
+                            toast.error('Could not save meeting report.');
                         });
 
-                        if (res.ok) {
-                            toast.success("Upload complete. Generating report...");
-                        } else {
-                            const errData = await res.json().catch(() => ({ message: "Unknown server error" }));
-                            toast.error(`Error: ${errData.message || res.statusText}`);
-                        }
+                        // Immediate navigation
+                        clearMeetingStorage();
+                        navigate(`/report/${roomId}`, { replace: true });
 
                     } catch (error) {
                         console.error('Failed to upload audio:', error);
