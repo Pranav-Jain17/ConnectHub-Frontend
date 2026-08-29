@@ -20,7 +20,16 @@ function Home() {
         const fetchReports = async () => {
             try {
                 const data = await apiRequest('https://connecthub.dikshant-ahalawat.live/meetings/reports/me', 'GET');
-                setReports(data);
+                console.log("Fetched reports data:", data);
+                
+                if (Array.isArray(data)) {
+                    setReports(data);
+                } else if (data && Array.isArray(data.reports)) {
+                    setReports(data.reports);
+                } else {
+                    console.warn("Unexpected reports data structure:", data);
+                    setReports([]);
+                }
             } catch (err) {
                 console.error("Failed to fetch reports:", err);
             }
