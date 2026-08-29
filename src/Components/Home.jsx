@@ -24,6 +24,8 @@ function Home() {
                 
                 if (Array.isArray(data)) {
                     setReports(data);
+                } else if (data && Array.isArray(data.meetings)) {
+                    setReports(data.meetings);
                 } else if (data && Array.isArray(data.reports)) {
                     setReports(data.reports);
                 } else {
@@ -170,26 +172,27 @@ function Home() {
             <div className="reports-container">
                 <h2>Past Meetings</h2>
                 {reports.length > 0 ? (
-                    <div className="reports-grid">
+                    <div className="reports-list">
                         {reports.map((report) => (
-                            <Link to={`/report/${report.meetingId}`} key={report.meetingId} className="report-card-link">
-                                <div className="report-card-home">
-                                    <div className={`report-status-badge ${report.reportStatus || 'completed'}`}>
-                                        {report.reportStatus === 'processing' ? 'Processing' : 
-                                         report.reportStatus === 'failed' ? 'Failed' : 'Completed'}
+                            <Link to={`/report/${report.meetingId || report.roomId}`} key={report._id || report.meetingId} className="report-row-link">
+                                <div className="report-row">
+                                    <div className="report-row-info">
+                                        <h3>{report.title || "Meeting Report"}</h3>
+                                        <p>Ended on: {new Date(report.endedAt || report.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <h3>{report.title || "Meeting Report"}</h3>
-                                    <p>Ended on: {new Date(report.endedAt).toLocaleDateString()}</p>
-                                    <button className="btn-view-report">
-                                        {report.reportStatus === 'processing' ? 'Check Status' : 
-                                         report.reportStatus === 'failed' ? 'View Error' : 'View Report'}
-                                    </button>
+                                    <div className="report-row-status">
+                                        <div className={`report-status-badge ${report.reportStatus || 'completed'}`}>
+                                            {report.reportStatus === 'processing' ? 'Processing' : 
+                                             report.reportStatus === 'failed' ? 'Failed' : 'Completed'}
+                                        </div>
+                                        <span className="row-arrow">→</span>
+                                    </div>
                                 </div>
                             </Link>
                         ))}
                     </div>
                 ) : (
-                    <p>No past meetings found.</p>
+                    <p className="no-reports">No past meetings found.</p>
                 )}
             </div>
 
