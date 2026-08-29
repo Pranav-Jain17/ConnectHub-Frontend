@@ -167,20 +167,33 @@ export default function Meeting() {
                     const formData = new FormData();
                     formData.append('audio', audioBlob, 'meeting.webm');
                     formData.append('meetingId', roomId);
+                    audioChunksRef.current = []; // Clear chunks for next time
 
                     try {
                         const token = localStorage.getItem("loginToken");
-                        toast.info("Uploading report...");
-                        await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
+                        toast.info("Uploading audio for report...");
+                        
+                        const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/end`, {
                             method: 'POST',
                             headers: {
                                 Authorization: `Bearer ${token}`,
                             },
                             body: formData,
                         });
+
+                        if (res.ok) {
+                            toast.success("Upload complete. Generating report...");
+                        } else {
+                            const errData = await res.json().catch(() => ({ message: "Unknown server error" }));
+                            toast.error(`Error: ${errData.message || res.statusText}`);
+                        }
+
                     } catch (error) {
                         console.error('Failed to upload audio:', error);
-                        toast.error('Could not save meeting report.');
+                        toast.error('Could not save meeting report. Check console for details.');
+                    } finally {
+                        // This console.log helps confirm the fetch promise completed.
+                        console.log("Upload fetch process finished.");
                     }
                 };
 
