@@ -11,6 +11,12 @@ export default function Report() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    useEffect(() => {
+        if (socket && !socket.connected) {
+            socket.connect();
+        }
+    }, [socket]);
+
     const fetchReport = useCallback(async () => {
         try {
             const token = localStorage.getItem("loginToken");

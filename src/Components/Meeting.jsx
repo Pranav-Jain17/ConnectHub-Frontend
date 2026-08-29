@@ -193,6 +193,9 @@ export default function Meeting() {
                             toast.error('Could not save meeting report.');
                         });
 
+                        // Notify others instantly by disconnecting before navigating
+                        socket?.disconnect();
+
                         // Immediate navigation
                         clearMeetingStorage();
                         navigate(`/report/${roomId}`, { replace: true });
@@ -228,6 +231,15 @@ export default function Meeting() {
 
         const handleUserLeft = (data) => {
             const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
+            
+            // If the host leaves or disconnects, participants should also be redirected to the report screen
+            if (leaverId === hostUserId && !isHost) {
+                toast.info("The host has ended the meeting.");
+                clearMeetingStorage();
+                navigate(`/report/${roomId}`, { replace: true });
+                return;
+            }
+
             const name = nameMapRef.current[leaverId] || "A participant";
             toast.info(`${name} left the meeting`);
         };
