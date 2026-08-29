@@ -47,6 +47,7 @@ function Home({ userId }) {
 
             localStorage.setItem("meetId", meetId);
             localStorage.setItem("roomId", roomId);
+            localStorage.setItem("meetTitle", meetTitle);
 
             navigate("/meeting");
         } catch (err) {
