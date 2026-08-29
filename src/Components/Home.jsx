@@ -178,7 +178,6 @@ function Home() {
                                 <div className="report-row">
                                     <div className="report-row-info">
                                         <h3>{report.title || "Meeting Report"}</h3>
-                                        <p>Ended on: {new Date(report.endedAt || report.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="report-row-status">
                                         <div className={`report-status-badge ${report.reportStatus || 'completed'}`}>
