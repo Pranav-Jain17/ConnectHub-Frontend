@@ -34,7 +34,7 @@ function Login() {
             });
 
             if (!response.ok) {
-                throw new Error(Status: ${ response.status });
+                throw new Error(`Status: ${response.status}`);
             }
 
             const data = await response.json();

@@ -123,29 +123,29 @@ export default function Meeting() {
                     <span className="room-id-label">Title:</span>
                     <span className="room-id-value">{meetTitle}</span>
                 </div>
-                
+
                 <div className="toolbuttons">
                     {/* Mic button */}
-                    <button 
-                        className={btn mic-btn ${!isMicOn ? 'btn-off' : ''}}
+                    <button
+                        className={`btn mic-btn ${!isMicOn ? 'btn-off' : ''}`}
                         onClick={handleMicToggle}
                         title={isMicOn ? 'Mute microphone' : 'Unmute microphone'}
                     >
-                        <img 
-                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"} 
-                            alt={isMicOn ? "Mic On" : "Mic Off"} 
+                        <img
+                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
+                            alt={isMicOn ? "Mic On" : "Mic Off"}
                         />
                     </button>
 
                     {/* Video button */}
-                    <button 
-                        className={btn video-btn ${!isVideoOn ? 'btn-off' : ''}}
+                    <button
+                        className={`btn video-btn ${!isVideoOn ? 'btn-off' : ''}`}
                         onClick={handleVideoToggle}
                         title={isVideoOn ? 'Turn off camera' : 'Turn on camera'}
                     >
-                        <img 
-                            src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"} 
-                            alt={isVideoOn ? "Video On" : "Video Off"} 
+                        <img
+                            src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"}
+                            alt={isVideoOn ? "Video On" : "Video Off"}
                         />
                     </button>
 
@@ -170,8 +170,8 @@ export default function Meeting() {
                         <img src="/assets/svg/copyCode.svg" alt="copy room id" />
                     </button>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }
 
