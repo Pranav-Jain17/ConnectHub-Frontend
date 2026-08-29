@@ -2,12 +2,24 @@
     box-sizing: border-box;
 }
 
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    background: rgb(224, 224, 239);
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 .home-page {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     background: rgb(224, 224, 239);
     padding-top: 70px;
+    overflow-y: auto;
 }
 
 .top-nav {
@@ -70,8 +82,9 @@
     background: #fff;
     border-radius: 12px;
     margin: auto;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
 }
 
 .home-left {
@@ -254,9 +267,18 @@
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
+
+    html,
+    body {
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
     .home-page {
         padding-top: 20px;
         justify-content: flex-start;
+        min-height: auto;
+        overflow-y: auto;
     }
 
     .top-nav {
@@ -264,8 +286,9 @@
     }
 
     .home-container {
-        flex-direction: row;
+        flex-direction: column;
         margin: 10px auto;
+        width: 95%;
     }
 
     .home-right {
@@ -283,5 +306,15 @@
 
     .home-left p {
         margin-bottom: 15px;
+    }
+
+    .home-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .btn-join,
+    .btn-create {
+        width: 100%;
     }
 }

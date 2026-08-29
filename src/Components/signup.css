@@ -2,16 +2,21 @@ html,
 body {
     margin: 0;
     padding: 0;
-    height: 100%;
+    width: 100%;
+    min-height: 100%;
+    background: rgb(224, 224, 239);
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .signup-page {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     min-height: 100vh;
     background: rgb(224, 224, 239);
     padding: 20px;
+    overflow-y: auto;
 }
 
 .signup-container {
@@ -22,7 +27,8 @@ body {
     background: #fff;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
+    margin: auto;
 }
 
 .signup-image-side {
@@ -47,6 +53,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow-y: auto;
 }
 
 .signup-form-side h2 {
@@ -96,7 +103,7 @@ body {
 .btn-signup {
     width: 100%;
     padding: 14px;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 3vw, 1.1rem);
     color: #fff;
     background-color: #1a73e8;
     border: none;
@@ -135,6 +142,7 @@ body {
     }
 
     .signup-image-side img {
+        width: 60%;
         max-width: 180px;
     }
 
@@ -144,15 +152,25 @@ body {
 }
 
 @media (max-height: 600px) and (orientation: landscape) {
+
+    html,
+    body {
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
     .signup-page {
         align-items: flex-start;
         padding: 10px;
+        min-height: auto;
+        overflow-y: auto;
     }
 
     .signup-container {
-        flex-direction: row;
+        flex-direction: column;
         max-width: 100%;
         border-radius: 0;
+        width: 100%;
     }
 
     .signup-image-side {
@@ -160,7 +178,7 @@ body {
     }
 
     .signup-form-side {
-        padding: 20px;
+        padding: 20px 30px;
     }
 
     .signup-form-side h2 {

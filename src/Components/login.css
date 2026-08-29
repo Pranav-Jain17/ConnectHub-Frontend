@@ -1,17 +1,28 @@
+/* ================= */
+/* BASE GLOBAL STYLES */
+/* ================= */
 html,
 body {
     margin: 0;
     padding: 0;
-    height: 100%;
+    width: 100%;
+    min-height: 100%;
+    background: rgb(224, 224, 239);
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
+/* ensure page scrolls if content overflows */
 .login-page {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    width: 100%;
     min-height: 100vh;
+    padding: 40px 20px;
     background: rgb(224, 224, 239);
-    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .login-container {
@@ -22,7 +33,8 @@ body {
     background: #fff;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     border-radius: 12px;
-    overflow: hidden;
+    overflow: visible;
+    margin: auto;
 }
 
 .login-image-side {
@@ -32,6 +44,8 @@ body {
     justify-content: center;
     padding: 40px;
     background-color: rgb(193, 193, 251);
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
 }
 
 .login-image-side img {
@@ -47,6 +61,8 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
+    overflow-y: auto;
+    /* ensure scroll if needed */
 }
 
 .login-form-side h2 {
@@ -86,6 +102,7 @@ body {
     border-radius: 6px;
     outline: none;
     transition: border-color 0.2s;
+    box-sizing: border-box;
 }
 
 .login-form .form-group input:focus {
@@ -108,6 +125,12 @@ body {
     color: #4a5568;
     cursor: pointer;
     flex: 1;
+}
+
+.toggle-login-type input[type="radio"] {
+    margin-right: 8px;
+    width: 1.1em;
+    height: 1.1em;
 }
 
 .remember-options {
@@ -138,7 +161,7 @@ body {
 .btn-login {
     width: 100%;
     padding: 14px;
-    font-size: 1.1rem;
+    font-size: clamp(1rem, 3vw, 1.1rem);
     color: #fff;
     background-color: #1a73e8;
     border: none;
@@ -165,6 +188,9 @@ body {
     font-weight: 600;
 }
 
+/* ======== */
+/* TABLET UI */
+/* ======== */
 @media (max-width: 900px) {
     .login-container {
         max-width: 500px;
@@ -173,10 +199,13 @@ body {
 
     .login-image-side {
         padding: 30px;
+        border-bottom-left-radius: 0;
+        border-top-right-radius: 12px;
     }
 
     .login-image-side img {
-        max-width: 200px;
+        width: 60%;
+        max-width: 180px;
     }
 
     .login-form-side {
@@ -184,16 +213,28 @@ body {
     }
 }
 
+/* =================== */
+/* LANDSCAPE SMALL HEIGHT */
+/* =================== */
 @media (max-height: 550px) and (orientation: landscape) {
+
+    html,
+    body {
+        height: auto !important;
+        overflow-y: auto !important;
+    }
+
     .login-page {
-        align-items: flex-start;
-        padding: 10px;
+        padding: 20px;
+        min-height: auto;
+        overflow-y: auto;
     }
 
     .login-container {
-        flex-direction: row;
-        max-width: 100%;
-        border-radius: 0;
+        flex-direction: column;
+        max-width: 700px;
+        width: 100%;
+        margin-top: 0;
     }
 
     .login-image-side {
@@ -201,27 +242,31 @@ body {
     }
 
     .login-form-side {
-        padding: 20px;
+        padding: 20px 30px;
     }
 
     .login-form-side h2 {
-        font-size: 1.5rem;
+        font-size: 1.6rem;
         margin-bottom: 15px;
     }
 
     .login-form .form-group {
-        margin-bottom: 10px;
+        margin-bottom: 12px;
     }
 }
 
+/* ============ */
+/* MOBILE SMALL */
+/* ============ */
 @media (max-width: 480px) {
     .login-page {
-        padding: 10px;
+        padding: 20px 10px;
     }
 
     .login-container {
         box-shadow: none;
         background: transparent;
+        border-radius: 0;
     }
 
     .login-form-side {
@@ -237,6 +282,10 @@ body {
 
     .toggle-login-type {
         flex-direction: column;
-        gap: 8px;
+        gap: 10px;
+    }
+
+    .toggle-login-type label {
+        width: 100%;
     }
 }
