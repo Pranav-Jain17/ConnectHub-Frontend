@@ -79,7 +79,10 @@ function Home() {
             const userId = localStorage.getItem("userId");
             const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
 
-            if (typeof joinData.token !== 'string' || !joinData.token) {
+            console.log("Response from server:", joinData);
+            const { token, livekitUrl } = joinData;
+
+            if (!token) {
                 toast.error("Failed to retrieve a valid meeting token from the server.");
                 return;
             }
@@ -87,8 +90,8 @@ function Home() {
             localStorage.setItem("roomId", roomId);
             localStorage.setItem("meetTitle", title);
             localStorage.setItem("isHost", "true");
-            localStorage.setItem("livekitToken", joinData.token);
-            localStorage.setItem("livekitUrl", joinData.livekitUrl || LIVEKIT_URL);
+            localStorage.setItem("livekitToken", token);
+            localStorage.setItem("livekitUrl", livekitUrl || LIVEKIT_URL);
             
             navigate("/meeting");
             setModalType(null);
@@ -104,18 +107,21 @@ function Home() {
                 toast.error("User session missing.");
                 return;
             }
-            const data = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
+            const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${userId}/join`, 'POST', { roomId });
             
-            if (typeof data.token !== 'string' || !data.token) {
+            console.log("Response from server:", joinData);
+            const { token, livekitUrl } = joinData;
+            
+            if (!token) {
                 toast.error("Failed to retrieve a valid meeting token from the server.");
                 return;
             }
 
             localStorage.setItem("roomId", roomId);
-            localStorage.setItem("meetTitle", data?.meeting?.title || `Meeting ${roomId}`);
+            localStorage.setItem("meetTitle", joinData?.meeting?.title || `Meeting ${roomId}`);
             localStorage.setItem("isHost", "false");
-            localStorage.setItem("livekitToken", data.token);
-            localStorage.setItem("livekitUrl", data.livekitUrl || LIVEKIT_URL);
+            localStorage.setItem("livekitToken", token);
+            localStorage.setItem("livekitUrl", livekitUrl || LIVEKIT_URL);
             navigate("/meeting");
             setModalType(null);
         } catch (err) {
