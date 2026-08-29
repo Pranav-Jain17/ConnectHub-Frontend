@@ -17,8 +17,11 @@ export default function Report() {
         }
     }, [socket]);
 
-    const fetchReport = useCallback(async () => {
+    const fetchReport = useCallback(async (isSilent = false) => {
         try {
+            if (!isSilent) setLoading(true);
+            setError(null);
+            
             const token = localStorage.getItem("loginToken");
             if (!token) {
                 throw new Error("Authentication token not found.");
@@ -36,10 +39,12 @@ export default function Report() {
             }
 
             const data = await res.json();
+            console.log("Report data fetched:", data.reportStatus);
             setReport(data);
         } catch (err) {
+            console.error("Fetch report error:", err);
             setError(err.message);
-            toast.error(err.message);
+            if (!isSilent) toast.error(err.message);
         } finally {
             setLoading(false);
         }
@@ -53,9 +58,10 @@ export default function Report() {
         if (!socket) return;
 
         const handleReportReady = (data) => {
+            console.log("Socket event 'report-ready' received:", data);
             if (data.meetingId === meetingId) {
                 toast.success("AI report is ready!");
-                fetchReport();
+                fetchReport(true); // Silent fetch to update data
             }
         };
 
