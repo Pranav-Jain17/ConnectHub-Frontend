@@ -36,41 +36,23 @@ export default function Meeting() {
     const participantsOpenRef = useRef(isParticipantsOpen);
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
-    const [isJoined, setIsJoined] = useState(false);
     const { participants } = useParticipants(roomId, socket);
 
     useEffect(() => {
-        if (!socket || !roomId || !userId || !userName) return;
-        
-        const onConnect = () => {
-            console.log("🟢 Socket connected, joining room:", roomId);
-            socket.emit('join-room', roomId, userId, userName);
-            setIsJoined(true);
-        };
-
-        if (socket.connected) {
-            onConnect();
+        if (socket && !socket.connected) {
+            socket.connect();
         }
-
-        socket.on('connect', onConnect);
-        socket.on('disconnect', () => setIsJoined(false));
-        
-        return () => {
-            socket.off('connect', onConnect);
-            socket.off('disconnect');
-        };
-    }, [socket, roomId, userId, userName]);
+    }, [socket]);
 
     const {
         localStream,
         localStreamReady,
         remoteStreams,
-        remoteNames,
         toggleMic,
         toggleVideo,
         localStreamRef,
         peerConnectionsRef,
-    } = useWebRTC(socket, isJoined ? roomId : null, userId, userName);
+    } = useWebRTC(socket, roomId, userId);
 
     const {
         isScreenSharing,
@@ -88,16 +70,11 @@ export default function Meeting() {
 
     const participantNameMap = useMemo(() => {
         const map = {};
-        // 1. Start with fetched participants
         participants.forEach((p) => {
             map[p._id] = p.username || "Unknown User";
         });
-        // 2. Override/Supplement with names received via signaling
-        Object.entries(remoteNames).forEach(([id, name]) => {
-            if (name) map[id] = name;
-        });
         return map;
-    }, [participants, remoteNames]);
+    }, [participants]);
 
     useLayoutEffect(() => {
         chatOpenRef.current = isChatOpen;
@@ -167,10 +144,10 @@ export default function Meeting() {
         };
 
         const handleMeetingEnded = () => {
-            console.log("📩 Received meeting-ended signal");
             if (isExitingRef.current) return;
             isExitingRef.current = true;
             
+            // Stop all local tracks immediately
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach(track => track.stop());
             }
@@ -195,7 +172,7 @@ export default function Meeting() {
         socket.on("room-full", handleRoomFull);
         socket.on("meeting-ended", handleMeetingEnded);
         socket.on("user-left", handleUserLeft);
-        socket.on("user-joined", handleUserJoined);
+        socket.on("user-joined", handleUserJoined); // Listen for join to sync host
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
@@ -204,7 +181,7 @@ export default function Meeting() {
             socket.off("user-left", handleUserLeft);
             socket.off("user-joined", handleUserJoined);
         };
-    }, [socket]); // Removed navigate from dependencies to prevent constant re-binding
+    }, [socket, navigate]);
 
     useEffect(() => {
         window.history.pushState(null, document.title, window.location.href);
