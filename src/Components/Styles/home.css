@@ -9,7 +9,8 @@ body {
     width: 100%;
     min-height: 100dvh;
     background: rgb(224, 224, 239);
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-bottom: 0;
 }
 
@@ -26,11 +27,11 @@ body {
 .home-page {
     display: flex;
     flex-direction: column;
-    height: 100dvh;
+    min-height: 100dvh;
     background: rgb(224, 224, 239);
     padding-top: 70px;
-    overflow: hidden;
-    padding-bottom: 0;
+    overflow-y: auto;
+    padding-bottom: 40px;
 }
 
 .top-nav {
