@@ -149,25 +149,6 @@ export default function Meeting() {
             navigate("/home");
         };
 
-        const handleMeetingEnded = () => {
-            if (isExitingRef.current) return;
-            isExitingRef.current = true;
-            
-            console.log("🛑 Meeting ended signal received");
-
-            // Stop all local tracks immediately
-            if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach(track => track.stop());
-            }
-
-            // Clean up socket manually for clean exit
-            socket.emit('leave-room', roomId, userId);
-            
-            clearMeetingStorage();
-            toast.info("Meeting ended by host");
-            navigate("/home", { replace: true });
-        };
-
         const handleUserLeft = (data) => {
             const leaverId = (typeof data === 'object' && data !== null) ? data.userId : data;
             const name = nameMapRef.current[leaverId] || "A participant";
@@ -187,7 +168,6 @@ export default function Meeting() {
 
         socket.on("peer-mic-state", handlePeerMicState);
         socket.on("room-full", handleRoomFull);
-        socket.on("meeting-ended", handleMeetingEnded);
         socket.on("user-left", handleUserLeft);
         socket.on("user-disconnected", handleUserLeft);
         socket.on("user-connected", onUserConnected);
@@ -195,7 +175,6 @@ export default function Meeting() {
 
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
-            socket.off("meeting-ended", handleMeetingEnded);
             socket.off("room-full", handleRoomFull);
             socket.off("user-left", handleUserLeft);
             socket.off("user-disconnected", handleUserLeft);
