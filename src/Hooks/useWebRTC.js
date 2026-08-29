@@ -253,20 +253,6 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
         };
     }, [socket, roomId, userId, handleUserDisconnected]);
 
-    useEffect(() => {
-        if (!socket || !roomId || !userId || !localStreamReady) return;
-        const handleJoin = () => {
-            socket.emit('join-room', roomId, userId, userName);
-        };
-        if (socket.connected) {
-            handleJoin();
-        }
-        socket.on('connect', handleJoin);
-        return () => {
-            socket.off('connect', handleJoin);
-        };
-    }, [socket, roomId, userId, userName, localStreamReady]);
-
     const toggleMic = useCallback(() => {
         if (localStreamRef.current) {
             const track = localStreamRef.current.getAudioTracks()[0];

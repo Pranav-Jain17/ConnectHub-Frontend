@@ -39,10 +39,20 @@ export default function Meeting() {
     const { participants } = useParticipants(roomId, socket);
 
     useEffect(() => {
-        if (socket && !socket.connected) {
-            socket.connect();
+        if (!socket) return;
+        
+        const onConnect = () => {
+            console.log("🟢 Socket connected, joining room:", roomId);
+            socket.emit('join-room', roomId, userId, userName);
+        };
+
+        if (socket.connected) {
+            onConnect();
         }
-    }, [socket]);
+
+        socket.on('connect', onConnect);
+        return () => socket.off('connect', onConnect);
+    }, [socket, roomId, userId, userName]);
 
     const {
         localStream,
