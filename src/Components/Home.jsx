@@ -166,12 +166,14 @@ function Home() {
                             <Link to={`/report/${report.meetingId}`} key={report.meetingId} className="report-card-link">
                                 <div className="report-card-home">
                                     <div className={`report-status-badge ${report.reportStatus || 'completed'}`}>
-                                        {report.reportStatus === 'processing' ? 'Processing' : 'Completed'}
+                                        {report.reportStatus === 'processing' ? 'Processing' : 
+                                         report.reportStatus === 'failed' ? 'Failed' : 'Completed'}
                                     </div>
                                     <h3>{report.title || "Meeting Report"}</h3>
                                     <p>Ended on: {new Date(report.endedAt).toLocaleDateString()}</p>
                                     <button className="btn-view-report">
-                                        {report.reportStatus === 'processing' ? 'Check Status' : 'View Report'}
+                                        {report.reportStatus === 'processing' ? 'Check Status' : 
+                                         report.reportStatus === 'failed' ? 'View Error' : 'View Report'}
                                     </button>
                                 </div>
                             </Link>

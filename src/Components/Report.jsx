@@ -78,6 +78,24 @@ export default function Report() {
         return <div className="report-container">No report found.</div>;
     }
 
+    if (report.reportStatus === 'failed') {
+        return (
+            <div className="report-layout">
+                <header className="navbar">
+                    <Link to="/home" className="logo">ConnectHub</Link>
+                </header>
+                <div className="report-container processing-state">
+                    <div className="report-card">
+                        <h2 style={{ color: '#dc3545' }}>Report Generation Failed</h2>
+                        <p>We encountered an error while processing your meeting transcript.</p>
+                        <p>Please try re-generating or contact support if the issue persists.</p>
+                        <Link to="/home" className="btn-view-report" style={{ display: 'inline-block', width: 'auto', marginTop: '1rem' }}>Back to Home</Link>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     if (report.reportStatus === 'processing') {
         return (
             <div className="report-layout">
@@ -87,8 +105,8 @@ export default function Report() {
                 <div className="report-container processing-state">
                     <div className="report-card">
                         <h2>AI is analyzing your meeting...</h2>
-                        <p>Our AI is currently processing your meeting audio to generate a summary, key topics, and action items. This usually takes about a minute.</p>
-                        <p><strong>The report will appear here automatically when it's ready.</strong></p>
+                        <p>AI is still processing your meeting transcript to generate a summary, key topics, and action items.</p>
+                        <p><strong>This usually takes about a minute. The report will appear here automatically when ready.</strong></p>
                         <div className="loading-spinner-container">
                              <div className="loading-spinner"></div>
                         </div>
