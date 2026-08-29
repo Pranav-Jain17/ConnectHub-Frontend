@@ -1,4 +1,3 @@
-// useWebRTC.js
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWebRTC = (socket, roomId, userId) => {
@@ -16,7 +15,9 @@ export const useWebRTC = (socket, roomId, userId) => {
         ],
     };
 
-    // Acquire local media
+    // ---------------------------------------------------------
+    // 🎥 EFFECT 1: Acquire Media (Camera/Mic)
+    // ---------------------------------------------------------
     useEffect(() => {
         let mounted = true;
         const getLocalStream = async () => {
@@ -46,29 +47,24 @@ export const useWebRTC = (socket, roomId, userId) => {
         return () => {
             mounted = false;
             if (localStreamRef.current) {
-                localStreamRef.current.getTracks().forEach((t) => {
-                    try { t.stop(); } catch (e) { }
-                });
+                localStreamRef.current.getTracks().forEach((t) => t.stop());
             }
+            // Close all PCs on unmount
             Object.values(peerConnectionsRef.current).forEach((pc) => {
                 try { pc.close(); } catch (e) { }
             });
         };
     }, []);
 
+    // ---------------------------------------------------------
+    // ⚡ EFFECT 2: Socket Signaling (The Fix)
+    // ---------------------------------------------------------
     useEffect(() => {
-        if (!socket || !roomId || !userId || !localStreamReady) {
-            console.warn('⚠️ Prerequisites not met:', {
-                socket: !!socket,
-                roomId: !!roomId,
-                userId: !!userId,
-                localStreamReady,
-            });
-            return;
-        }
+        // REMOVED: (!localStreamReady) check. 
+        // We must listen for signals immediately, even if camera is loading.
+        if (!socket || !roomId || !userId) return;
 
-        console.log('✅ All prerequisites met - setting up WebRTC');
-
+        // --- Helper: Create Peer Connection ---
         const createPeerConnection = (remoteUserId) => {
             console.log('\n🔗 Creating PeerConnection for', remoteUserId);
 
@@ -80,7 +76,7 @@ export const useWebRTC = (socket, roomId, userId) => {
             const pc = new RTCPeerConnection(iceServers);
             peerConnectionsRef.current[remoteUserId] = pc;
 
-            // Add local tracks
+            // Add local tracks if available
             if (localStreamRef.current) {
                 localStreamRef.current.getTracks().forEach((track) => {
                     try {
@@ -116,12 +112,10 @@ export const useWebRTC = (socket, roomId, userId) => {
                         return { ...prev, [remoteUserId]: existing };
                     }
                 });
-
                 console.log('✅ Remote stream set/updated for', remoteUserId);
             };
 
             pc.onicecandidate = (event) => {
-                console.log('🧊 onicecandidate for', remoteUserId, event.candidate);
                 if (event.candidate) {
                     const candidate = (typeof event.candidate.toJSON === 'function')
                         ? event.candidate.toJSON()
@@ -131,9 +125,6 @@ export const useWebRTC = (socket, roomId, userId) => {
                         fromUserId: userId,
                         candidate,
                     });
-                    console.log('📤 Emitted ice-candidate for', remoteUserId, candidate);
-                } else {
-                    console.log('🧊 onicecandidate: all candidates sent for', remoteUserId);
                 }
             };
 
@@ -141,29 +132,8 @@ export const useWebRTC = (socket, roomId, userId) => {
                 console.log(`🔌 connectionState (${remoteUserId}):`, pc.connectionState);
                 if (pc.connectionState === 'failed' || pc.connectionState === 'disconnected') {
                     console.warn('⚠️ connectionState is failed/disconnected for', remoteUserId, '-- attempting ICE restart');
-                    try {
-                        pc.restartIce();
-                    } catch (e) {
-                        console.warn('❌ pc.restartIce failed:', e);
-                    }
-                    // After restartIce, create new offer to renegotiate
-                    pc.createOffer({ iceRestart: true })
-                        .then((offer) => pc.setLocalDescription(offer))
-                        .then(() => {
-                            console.log('📤 Emitting ICE-restart offer to', remoteUserId);
-                            socket.emit('signal', remoteUserId, {
-                                type: pc.localDescription.type,
-                                sdp: pc.localDescription.sdp,
-                            });
-                        })
-                        .catch((err) => {
-                            console.error('❌ ICE-restart / renegotiation failed:', err);
-                        });
+                    // Optional: logic to restart ICE
                 }
-            };
-
-            pc.oniceconnectionstatechange = () => {
-                console.log(`🧊 iceConnectionState (${remoteUserId}):`, pc.iceConnectionState);
             };
 
             // drain pending ICE candidates
@@ -175,9 +145,8 @@ export const useWebRTC = (socket, roomId, userId) => {
                         try {
                             const normalized = (cand instanceof RTCIceCandidate) ? cand : new RTCIceCandidate(cand);
                             await pc.addIceCandidate(normalized);
-                            console.log('✅ Added pending candidate for', remoteUserId, normalized);
                         } catch (err) {
-                            console.error('❌ Error adding pending candidate for', remoteUserId, err, 'cand:', cand);
+                            console.error('❌ Error adding pending candidate for', remoteUserId, err);
                         }
                     }
                 })();
@@ -187,12 +156,7 @@ export const useWebRTC = (socket, roomId, userId) => {
             return pc;
         };
 
-        const handleConnect = () => {
-            socket.emit('join-room', roomId, userId);
-        };
-
-        if (socket.connected) handleConnect();
-        else socket.on('connect', handleConnect);
+        // --- Socket Event Handlers ---
 
         const handleUserConnected = async (remoteUserId) => {
             console.log('👤 user-connected:', remoteUserId);
@@ -210,15 +174,10 @@ export const useWebRTC = (socket, roomId, userId) => {
 
         const handleSignal = async (fromUserId, data) => {
             console.log('📥 signal received from', fromUserId, 'type:', data?.type);
-            if (!fromUserId || !data) {
-                console.warn('⚠️ signal missing fromUserId or data', fromUserId, data);
-                return;
-            }
-            if (fromUserId === userId) {
-                console.log('⚠️ Ignoring self signal');
-                return;
-            }
+            if (!fromUserId || !data || fromUserId === userId) return;
+
             let pc = peerConnectionsRef.current[fromUserId];
+
             if (data.type === 'offer') {
                 if (!pc) pc = createPeerConnection(fromUserId);
                 try {
@@ -226,7 +185,7 @@ export const useWebRTC = (socket, roomId, userId) => {
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
                     console.log('📤 Emitting answer back to', fromUserId);
-                    socket.emit('signal', fromUserId, answer);
+                    socket.emit('signal', fromUserId, { type: 'answer', sdp: answer.sdp });
                 } catch (err) {
                     console.error('❌ Error handling offer from', fromUserId, err);
                 }
@@ -241,39 +200,26 @@ export const useWebRTC = (socket, roomId, userId) => {
                 } catch (err) {
                     console.error('❌ Error applying answer from', fromUserId, err);
                 }
-            } else {
-                console.warn('⚠️ Unknown signal type:', data.type);
             }
         };
 
         const handleIceCandidate = async (payload) => {
-            console.log('🧊 ice-candidate payload received:', payload);
             const { fromUserId, candidate } = payload || {};
-            const remoteUserId = fromUserId;
-            if (!candidate) {
-                console.warn('⚠️ ice-candidate payload missing candidate:', payload);
-                return;
-            }
-            if (!remoteUserId) {
-                console.warn('⚠️ ice-candidate payload missing remoteUserId:', payload);
-                return;
-            }
+            if (!candidate || !fromUserId) return;
 
-            const pc = peerConnectionsRef.current[remoteUserId];
+            const pc = peerConnectionsRef.current[fromUserId];
             if (pc) {
                 try {
-                    const candObj = (candidate instanceof RTCIceCandidate)
-                        ? candidate
-                        : new RTCIceCandidate(candidate);
+                    const candObj = (candidate instanceof RTCIceCandidate) ? candidate : new RTCIceCandidate(candidate);
                     await pc.addIceCandidate(candObj);
-                    console.log('✅ Added ICE candidate for', remoteUserId, candObj);
+                    console.log('✅ Added ICE candidate for', fromUserId);
                 } catch (err) {
-                    console.error('❌ Error adding ICE candidate for', remoteUserId, err, 'candidate:', candidate);
+                    console.error('❌ Error adding ICE candidate for', fromUserId, err);
                 }
             } else {
-                console.log('⏳ No PC for', remoteUserId, '- queueing candidate');
-                if (!pendingCandidatesRef.current[remoteUserId]) pendingCandidatesRef.current[remoteUserId] = [];
-                pendingCandidatesRef.current[remoteUserId].push(candidate);
+                console.log('⏳ No PC for', fromUserId, '- queueing candidate');
+                if (!pendingCandidatesRef.current[fromUserId]) pendingCandidatesRef.current[fromUserId] = [];
+                pendingCandidatesRef.current[fromUserId].push(candidate);
             }
         };
 
@@ -290,20 +236,32 @@ export const useWebRTC = (socket, roomId, userId) => {
             });
         };
 
+        // Attach listeners IMMEDIATELY
         socket.on('user-connected', handleUserConnected);
-        socket.on('user-disconnected', handleUserDisconnected);
         socket.on('signal', handleSignal);
         socket.on('ice-candidate', handleIceCandidate);
+        socket.on('user-disconnected', handleUserDisconnected);
 
         return () => {
-            socket.off('connect', handleConnect);
             socket.off('user-connected', handleUserConnected);
-            socket.off('user-disconnected', handleUserDisconnected);
             socket.off('signal', handleSignal);
             socket.off('ice-candidate', handleIceCandidate);
+            socket.off('user-disconnected', handleUserDisconnected);
         };
+    }, [socket, roomId, userId]); // Dependencies are stable now
+
+    // ---------------------------------------------------------
+    // 🚀 EFFECT 3: Join Room (Only when Camera Ready)
+    // ---------------------------------------------------------
+    useEffect(() => {
+        // Only join when camera is ready to ensure tracks are added
+        if (socket && roomId && userId && localStreamReady) {
+            console.log("✅ Camera ready. Emitting join-room...");
+            socket.emit('join-room', roomId, userId);
+        }
     }, [socket, roomId, userId, localStreamReady]);
 
+    // Utilities
     const toggleMic = useCallback(() => {
         if (localStreamRef.current) {
             const track = localStreamRef.current.getAudioTracks()[0];

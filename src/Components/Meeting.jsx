@@ -40,11 +40,11 @@ export default function Meeting() {
     }, []);
 
     // Join the room via socket whenever we (re)connect
-    useEffect(() => {
-        if (!socket || !roomId || !userId) return;
-        console.log("📡 Emitting join-room:", { roomId, userId });
-        socket.emit("join-room", roomId, userId);
-    }, [socket, roomId, userId]);
+    // useEffect(() => {
+    //     if (!socket || !roomId || !userId) return;
+    //     console.log("📡 Emitting join-room:", { roomId, userId });
+    //     socket.emit("join-room", roomId, userId);
+    // }, [socket, roomId, userId]);
 
     const {
         localStream,
