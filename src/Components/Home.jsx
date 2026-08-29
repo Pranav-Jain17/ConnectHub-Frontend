@@ -165,9 +165,14 @@ function Home() {
                         {reports.map((report) => (
                             <Link to={`/report/${report.meetingId}`} key={report.meetingId} className="report-card-link">
                                 <div className="report-card-home">
-                                    <h3>{report.title}</h3>
+                                    <div className={`report-status-badge ${report.reportStatus || 'completed'}`}>
+                                        {report.reportStatus === 'processing' ? 'Processing' : 'Completed'}
+                                    </div>
+                                    <h3>{report.title || "Meeting Report"}</h3>
                                     <p>Ended on: {new Date(report.endedAt).toLocaleDateString()}</p>
-                                    <button className="btn-view-report">View Report</button>
+                                    <button className="btn-view-report">
+                                        {report.reportStatus === 'processing' ? 'Check Status' : 'View Report'}
+                                    </button>
                                 </div>
                             </Link>
                         ))}

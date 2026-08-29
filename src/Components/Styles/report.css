@@ -90,3 +90,36 @@
     white-space: pre-wrap;
     word-wrap: break-word;
 }
+
+/* Loading Spinner for Processing State */
+.loading-spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.processing-state h2 {
+    color: #007bff;
+    margin-bottom: 1rem;
+}
+
+.processing-state p {
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
