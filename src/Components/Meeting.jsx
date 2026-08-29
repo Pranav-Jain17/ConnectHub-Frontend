@@ -41,6 +41,22 @@ export default function Meeting() {
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
     const { participants } = useParticipants(roomId, socket);
+    const loginToken = localStorage.getItem("loginToken");
+
+    const apiRequest = async (url, method, body = null) => {
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${loginToken}`
+        };
+        const config = { method, headers };
+        if (body) config.body = JSON.stringify(body);
+
+        const response = await fetch(url, config);
+        const data = await response.json();
+
+        if (!response.ok) throw new Error(data.message || data.error || `Status: ${response.status}`);
+        return data;
+    };
 
     useEffect(() => {
         if (socket && !socket.connected) {
@@ -86,21 +102,39 @@ export default function Meeting() {
     }, [participantNameMap]);
 
     useEffect(() => {
-        const storedRoomId = localStorage.getItem("roomId");
-        const storedUserId = localStorage.getItem("userId");
-        const url = localStorage.getItem("livekitUrl");
-        const token = localStorage.getItem("livekitToken");
+        const initializeMeeting = async () => {
+            const storedRoomId = localStorage.getItem("roomId");
+            const storedUserId = localStorage.getItem("userId");
 
-        if (!storedRoomId || !storedUserId || !url || !token) {
-            navigate("/home", { replace: true });
-            return;
-        }
+            if (!storedRoomId || !storedUserId) {
+                toast.error("No active meeting session found.");
+                navigate("/home", { replace: true });
+                return;
+            }
 
-        setRoomId(storedRoomId);
-        setUserId(storedUserId);
-        setLivekitUrl(url);
-        setLivekitToken(token);
-        setIsHost(localStorage.getItem("isHost") === "true");
+            try {
+                const joinData = await apiRequest(`https://connecthub.dikshant-ahalawat.live/meetings/${storedUserId}/join`, 'POST', { roomId: storedRoomId });
+
+                if (typeof joinData.token !== 'string' || !joinData.token) {
+                    toast.error("Failed to retrieve a valid meeting token. Please try joining again.");
+                    navigate("/home", { replace: true });
+                    return;
+                }
+                
+                const LIVEKIT_URL = "wss://connecthub-7c2knk6r.livekit.cloud";
+                setRoomId(storedRoomId);
+                setUserId(storedUserId);
+                setLivekitUrl(joinData.livekitUrl || LIVEKIT_URL);
+                setLivekitToken(joinData.token);
+                setIsHost(localStorage.getItem("isHost") === "true");
+
+            } catch (error) {
+                toast.error(`Failed to rejoin meeting: ${error.message}`);
+                navigate("/home", { replace: true });
+            }
+        };
+
+        initializeMeeting();
     }, [navigate]);
 
     useEffect(() => {
@@ -160,7 +194,7 @@ export default function Meeting() {
                     const formData = new FormData();
                     formData.append('audio', audioBlob, 'meeting.webm');
                     formData.append('meetingId', roomId);
-                    audioChunksRef.current = []; // Clear chunks for next time
+                    audioChunksRef.current = []; 
 
                     try {
                         const token = localStorage.getItem("loginToken");
@@ -438,4 +472,4 @@ export default function Meeting() {
             )}
         </div>
     );
-    }
+}
