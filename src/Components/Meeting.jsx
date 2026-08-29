@@ -183,8 +183,12 @@ export default function Meeting() {
                         className="local-video"
                     />
                     <span className="video-label">
-                        You {!isVideoOn && "(Camera Off)"} {!isMicOn && "(Muted)"}{" "}
-                        {isHost && "(Host)"}
+                        <img
+                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
+                            alt=""
+                        />
+                        You
+                        {isHost && " (Host)"}
                     </span>
                 </div>
 
@@ -275,6 +279,7 @@ export default function Meeting() {
 
 function RemoteVideo({ stream, userId }) {
     const videoRef = useRef(null);
+    const userName = localStorage.getItem("userName") || "Remote User";
 
     useEffect(() => {
         if (!videoRef.current || !stream) return;
@@ -285,7 +290,8 @@ function RemoteVideo({ stream, userId }) {
     return (
         <div className="video-container">
             <video ref={videoRef} autoPlay playsInline className="remote-video" />
-            <span className="video-label">User {userId.substring(0, 8)}</span>
+            {/* <span className="video-label">User {userId.substring(0, 8)}</span> */}
+            <span className="video-label">{userName}</span>
         </div>
     );
 }

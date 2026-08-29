@@ -1,9 +1,14 @@
-/* --- existing layout & video/toolbar styles --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 .layout {
     display: grid;
     grid-template-rows: 60px 1fr 70px;
     height: 100vh;
+    width: 100vw;
     overflow: hidden;
 }
 
@@ -11,19 +16,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: black;
+    background: rgb(224, 224, 239);
     padding: 0 20px;
     color: white;
 }
 
 .logo {
-    font-size: 18px;
-    color: white;
+    font-size: 24px;
+    color: black;
 }
 
 .content-gap {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-content: center;
+    justify-items: center;
     gap: 20px;
     padding: 20px;
     background: #1a1a1a;
@@ -33,9 +40,12 @@
 .video-container {
     position: relative;
     background: #000;
-    border-radius: 8px;
+    border-radius: 20px;
     overflow: hidden;
     aspect-ratio: 16/9;
+    width: 100%;
+    max-width: 1000px;
+    max-height: 100%;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
@@ -44,30 +54,51 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    border-radius: 20px;
 }
 
 .local-video {
     transform: scaleX(-1);
-    /* mirror local video */
 }
 
 .video-label {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
-    background: rgba(0, 0, 0, 0.7);
+    bottom: 12px;
+    left: 12px;
+    background: black;
+    opacity: 0.7;
+    backdrop-filter: blur(4px);
     color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 14px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.video-label img {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.video-label span {
+    opacity: 0.8;
+    font-size: 11px;
+    margin-left: -2px;
 }
 
 .toolbar {
     display: flex;
     align-items: center;
     padding: 0 20px;
-    background: black;
+    background: rgb(224, 224, 239);
     gap: 20px;
     flex-wrap: wrap;
     justify-content: space-between;
@@ -77,10 +108,10 @@
     display: flex;
     align-items: center;
     padding: 6px 12px;
-    border: 1px solid white;
+    border: 1px solid black;
     border-radius: 4px;
     font-size: 16px;
-    color: white;
+    color: black;
     flex-shrink: 0;
     word-break: break-all;
 }
@@ -89,15 +120,16 @@
     display: flex;
     align-items: center;
     padding: 6px 12px;
-    border: 1px solid white;
+    border: 1px solid black;
     border-radius: 4px;
     font-size: 14px;
-    color: white;
+    color: black;
     flex-shrink: 0;
     word-break: break-all;
 }
 
 .room-id-label {
+    font-weight: 700;
     margin-right: 6px;
     opacity: 0.8;
 }
@@ -111,7 +143,6 @@
     width: 28px;
     height: 28px;
     border: none;
-    border-radius: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -160,6 +191,107 @@
 
 .btn.end-btn:hover {
     background: #c9302c;
+}
+
+.btn-off {
+    background: #d9534f !important;
+}
+
+.btn-off:hover {
+    background: #c9302c !important;
+}
+
+.btn-off img {
+    opacity: 0.9;
+}
+
+.modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    animation: fadeInBackdrop 0.2s forwards;
+}
+
+@keyframes fadeInBackdrop {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-box {
+    background: #fff;
+    padding: 24px 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-sizing: border-box;
+}
+
+.modal-box h2 {
+    margin: 0 0 16px;
+    font-size: 1.5rem;
+    color: #223e63;
+}
+
+.modal-box p {
+    margin-bottom: 20px;
+    color: #333;
+    line-height: 1.4;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-buttons button {
+    padding: 8px 16px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.modal-buttons button:first-child {
+    background-color: #d9534f;
+    color: white;
+}
+
+.modal-buttons button:first-child:hover {
+    background-color: #c9302c;
+}
+
+.modal-buttons button:last-child {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.modal-buttons button:last-child:hover {
+    background-color: #c0c0c0;
+}
+
+body.modal-open,
+html.modal-open {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
 }
 
 @media (max-width: 900px) {
@@ -244,108 +376,4 @@
 
 .content-gap::-webkit-scrollbar-thumb:hover {
     background: #4e545b;
-}
-
-.btn-off {
-    background: #d9534f !important;
-}
-
-.btn-off:hover {
-    background: #c9302c !important;
-}
-
-.btn-off img {
-    opacity: 0.9;
-}
-
-/* --- NEW: Modal styles (backdrop + box) --- */
-
-.modal-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    opacity: 0;
-    animation: fadeInBackdrop 0.2s forwards;
-}
-
-@keyframes fadeInBackdrop {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-.modal-box {
-    background: #fff;
-    padding: 24px 20px;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 400px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
-    box-sizing: border-box;
-}
-
-.modal-box h2 {
-    margin: 0 0 16px;
-    font-size: 1.5rem;
-    color: #223e63;
-}
-
-.modal-box p {
-    margin-bottom: 20px;
-    color: #333;
-    line-height: 1.4;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-.modal-buttons button {
-    padding: 8px 16px;
-    font-size: 1rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-
-.modal-buttons button:first-child {
-    background-color: #d9534f;
-    color: white;
-}
-
-.modal-buttons button:first-child:hover {
-    background-color: #c9302c;
-}
-
-.modal-buttons button:last-child {
-    background-color: #e0e0e0;
-    color: #333;
-}
-
-.modal-buttons button:last-child:hover {
-    background-color: #c0c0c0;
-}
-
-/* Lock background scroll when modal is open */
-body.modal-open,
-html.modal-open {
-    overflow: hidden;
-    height: 100%;
-    width: 100%;
 }

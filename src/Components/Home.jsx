@@ -142,8 +142,8 @@ function Home({ userId }) {
             try {
                 const data = await joinMeeting(storedUserId, inputValue, loginToken);
                 toast.success("Joined meet successfully!");
-                if (data && data.title) {
-                    localStorage.setItem("meetTitle", data.title);
+                if (data && data.meeting.title) {
+                    localStorage.setItem("meetTitle", data.meeting.title);
                 } else {
                     localStorage.setItem("meetTitle", `Meeting ${inputValue}`);
                 }
@@ -209,9 +209,15 @@ function Home({ userId }) {
                                 : "Enter Room ID to Join"}
                         </h2>
                         <input
+                            autoFocus
                             type="text"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    handleModalSubmit();
+                                }
+                            }}
                             placeholder={
                                 modalType === "create"
                                     ? "e.g. Planning Meeting"
