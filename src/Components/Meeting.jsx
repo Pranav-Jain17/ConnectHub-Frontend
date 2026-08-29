@@ -248,6 +248,7 @@ export default function Meeting() {
         socket.on("user-disconnected", handleUserLeft);
         socket.on("user-connected", onUserConnected);
         socket.on("user-joined", handleUserJoined);
+        console.log("Listening for 'meeting-ended' event...");
         socket.on("meeting-ended", handleMeetingEnded);
 
         return () => {
