@@ -27,7 +27,7 @@ export default function VideoGrid({
                 <div className="presentation-stage">
                     <ScreenVideo
                         stream={activeScreenShare.stream}
-                        name={`${participantNameMap[activeScreenShare.participant?.identity] || "Remote User"}'s Screen`}
+                        name={`${activeScreenShare.participantName || participantNameMap[activeScreenShare.participant?.identity] || "Remote User"}'s Screen`}
                     />
                 </div>
 
@@ -58,7 +58,7 @@ export default function VideoGrid({
                             <div className="sidebar-item" key={t.participant?.sid}>
                                 <SidebarVideo
                                     stream={t.stream}
-                                    name={participantNameMap[t.participant?.identity] || "Remote User"}
+                                    name={t.participantName || participantNameMap[t.participant?.identity] || "Remote User"}
                                     isMicOn={peerMicState[t.participant?.identity]}
                                 />
                             </div>
@@ -94,12 +94,12 @@ export default function VideoGrid({
             </div>
 
             {/* Remote camera feeds */}
-            {cameraFeeds.map(({ stream, participant }) => (
+            {cameraFeeds.map((t) => (
                 <RemoteVideo
-                    key={participant?.sid}
-                    stream={stream}
-                    isMicOn={peerMicState[participant?.identity]}
-                    name={participantNameMap[participant?.identity] || "Remote User"}
+                    key={t.participant?.sid}
+                    stream={t.stream}
+                    isMicOn={peerMicState[t.participant?.identity]}
+                    name={t.participantName || participantNameMap[t.participant?.identity] || "Remote User"}
                 />
             ))}
         </main>

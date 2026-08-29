@@ -7,17 +7,36 @@ export const useWebRTC = (livekitUrl, token) => {
     const [remoteStreams, setRemoteStreams] = useState(new Map());
     const [localStreamReady, setLocalStreamReady] = useState(false);
     const [isScreenSharing, setIsScreenSharing] = useState(false);
+    const roomRef = useRef(null);
 
     useEffect(() => {
         const connectToLiveKit = async () => {
             const room = new Room({
                 adaptiveStream: true,
                 dynacast: true,
+                videoCaptureDefaults: {
+                    resolution: { width: 1280, height: 720, frameRate: 30 },
+                },
+                screenShareCaptureDefaults: {
+                    resolution: { width: 1920, height: 1080, frameRate: 30 },
+                    audio: true,
+                },
+                publishDefaults: {
+                    screenShareEncoding: {
+                        maxBitrate: 3000000,
+                        maxFramerate: 30,
+                    },
+                    videoEncoding: {
+                        maxBitrate: 1200000,
+                        maxFramerate: 30,
+                    },
+                },
             });
 
+            roomRef.current = room;
             setRoom(room);
 
-            room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+            const handleTrackSubscribed = (track, publication, participant) => {
                 if (track.kind === 'video') {
                     const mediaStream = new MediaStream([track.mediaStreamTrack]);
                     setRemoteStreams(prev => {
@@ -25,6 +44,7 @@ export const useWebRTC = (livekitUrl, token) => {
                         next.set(track.sid, { 
                             stream: mediaStream, 
                             participant, 
+                            participantName: participant.name || participant.identity,
                             isScreenShare: track.source === 'screen_share',
                             kind: track.kind
                         });
@@ -35,7 +55,16 @@ export const useWebRTC = (livekitUrl, token) => {
                 if (track.kind === 'audio') {
                     const audioEl = track.attach();
                     audioEl.style.display = 'none';
+                    audioEl.setAttribute('data-livekit', 'true');
                     document.body.appendChild(audioEl);
+                }
+            };
+
+            room.on(RoomEvent.TrackSubscribed, handleTrackSubscribed);
+
+            room.on(RoomEvent.TrackPublished, async (publication, participant) => {
+                if (!publication.isSubscribed) {
+                    await publication.setSubscribed(true);
                 }
             });
 
@@ -74,6 +103,15 @@ export const useWebRTC = (livekitUrl, token) => {
             try {
                 await room.connect(livekitUrl, token);
 
+                // Handle existing tracks for late joiners
+                room.remoteParticipants.forEach((participant) => {
+                    participant.trackPublications.forEach((publication) => {
+                        if (publication.isSubscribed && publication.track) {
+                            handleTrackSubscribed(publication.track, publication, participant);
+                        }
+                    });
+                });
+
                 const localTracks = await createLocalTracks({
                     audio: true,
                     video: true,
@@ -98,9 +136,11 @@ export const useWebRTC = (livekitUrl, token) => {
         }
 
         return () => {
-            if (room) {
-                room.disconnect();
+            if (roomRef.current) {
+                roomRef.current.disconnect();
+                roomRef.current = null;
             }
+            document.querySelectorAll('audio[data-livekit]').forEach(el => el.remove());
         };
     }, [livekitUrl, token]);
 
@@ -149,7 +189,10 @@ export const useWebRTC = (livekitUrl, token) => {
     const toggleScreenShare = useCallback(async () => {
         if (room) {
             const enabled = !isScreenSharing;
-            await room.localParticipant.setScreenShareEnabled(enabled);
+            await room.localParticipant.setScreenShareEnabled(enabled, {
+                resolution: { width: 1920, height: 1080, frameRate: 30 },
+                audio: true,
+            });
             setIsScreenSharing(enabled);
         }
     }, [room, isScreenSharing]);

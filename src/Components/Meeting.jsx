@@ -186,6 +186,12 @@ export default function Meeting() {
             toast.error("Could not finalize meeting report.");
         }
 
+        // ✅ Clean up audio elements
+        document.querySelectorAll('audio').forEach(el => {
+            el.srcObject = null;
+            el.remove();
+        });
+
         socket?.disconnect();
         clearMeetingStorage();
         navigate(`/report/${roomId}`, { replace: true });
@@ -416,6 +422,13 @@ export default function Meeting() {
         isExitingRef.current = true;
 
         if (localStream) localStream.getTracks().forEach(track => track.stop());
+
+        // ✅ Remove all LiveKit audio elements appended to body
+        document.querySelectorAll('audio').forEach(el => {
+            el.srcObject = null;
+            el.remove();
+        });
+
         socket?.disconnect();
 
         const currentRoomId = roomId;
