@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import HomeModals from './HomeModals';
 import './Styles/home.css';
+import { useSocket } from '../Providers/Socket';
 
 function Home() {
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
+    const { socket } = useSocket();
 
     const userName = localStorage.getItem("userName") || "User";
     const userEmail = localStorage.getItem("userEmail") || "user@example.com";
@@ -34,7 +36,13 @@ function Home() {
             }
         };
         fetchReports();
-    }, [loginToken]);
+        if (socket) {
+            socket.on('report-ready', fetchReports);
+            return () => {
+                socket.off('report-ready', fetchReports);
+            };
+        }
+    }, [loginToken, socket]);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
