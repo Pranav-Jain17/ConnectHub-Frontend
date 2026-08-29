@@ -48,6 +48,7 @@ export default function Meeting() {
         localStream,
         localStreamReady,
         remoteStreams,
+        remoteNames, // Get names shared directly via signaling
         toggleMic,
         toggleVideo,
         localStreamRef,
@@ -70,11 +71,16 @@ export default function Meeting() {
 
     const participantNameMap = useMemo(() => {
         const map = {};
+        // 1. Start with API-fetched names
         participants.forEach((p) => {
             map[p._id] = p.username || "Unknown User";
         });
+        // 2. Overlay with names shared directly via P2P signaling (instant)
+        Object.entries(remoteNames).forEach(([pid, name]) => {
+            map[pid] = name;
+        });
         return map;
-    }, [participants]);
+    }, [participants, remoteNames]);
 
     useLayoutEffect(() => {
         chatOpenRef.current = isChatOpen;

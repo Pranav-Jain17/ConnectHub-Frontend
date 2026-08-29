@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWebRTC = (socket, roomId, userId, userName) => {
     const [remoteStreams, setRemoteStreams] = useState({});
+    const [remoteNames, setRemoteNames] = useState({});
     const [localStreamReady, setLocalStreamReady] = useState(false);
     const localStreamRef = useRef(null);
     const peerConnectionsRef = useRef({});
@@ -47,6 +48,11 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             delete pendingCandidatesRef.current[remoteUserId];
         }
         setRemoteStreams((prev) => {
+            const next = { ...prev };
+            delete next[remoteUserId];
+            return next;
+        });
+        setRemoteNames((prev) => {
             const next = { ...prev };
             delete next[remoteUserId];
             return next;
@@ -177,14 +183,18 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             if (!remoteId || remoteId === userId) return;
             
             // Fix: Ensure any previous connection for this user is fully cleaned up before re-connecting
-            // This is critical for the "leave and join" scenario to ensure ICE candidates fire on a fresh PC.
             handleUserDisconnected(remoteId);
 
             const pc = createPeerConnection(remoteId);
             try {
                 const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
-                socket.emit('signal', remoteId, { type: offer.type, sdp: offer.sdp });
+                // Send name along with the offer
+                socket.emit('signal', remoteId, { 
+                    type: offer.type, 
+                    sdp: offer.sdp,
+                    senderName: userName 
+                });
             } catch (err) {
                 console.error('Error creating/sending offer to', remoteId, err);
             }
@@ -192,6 +202,12 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
 
         const handleSignal = async (fromUserId, data) => {
             if (!fromUserId || !data || fromUserId === userId) return;
+            
+            // Capture name if provided in signaling data
+            if (data.senderName) {
+                setRemoteNames(prev => ({ ...prev, [fromUserId]: data.senderName }));
+            }
+
             let pc = peerConnectionsRef.current[fromUserId];
             if (data.type === 'offer') {
                 if (!pc) pc = createPeerConnection(fromUserId);
@@ -200,7 +216,12 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
                     await drainCandidates(fromUserId);
                     const answer = await pc.createAnswer();
                     await pc.setLocalDescription(answer);
-                    socket.emit('signal', fromUserId, { type: 'answer', sdp: answer.sdp });
+                    // Send name back along with the answer
+                    socket.emit('signal', fromUserId, { 
+                        type: 'answer', 
+                        sdp: answer.sdp,
+                        senderName: userName
+                    });
                 } catch (err) {
                     console.error('Error handling offer:', err);
                 }
@@ -255,7 +276,7 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
             socket.off('user-disconnected', onUserLeft);
             socket.off('user-left', onUserLeft);
         };
-    }, [socket, roomId, userId, handleUserDisconnected]);
+    }, [socket, roomId, userId, userName, handleUserDisconnected]);
 
     useEffect(() => {
         if (!socket || !roomId || !userId || !localStreamReady) return;
@@ -297,6 +318,7 @@ export const useWebRTC = (socket, roomId, userId, userName) => {
         localStream: localStreamRef.current,
         localStreamReady,
         remoteStreams,
+        remoteNames,
         toggleMic,
         toggleVideo,
         peerConnectionsRef,
