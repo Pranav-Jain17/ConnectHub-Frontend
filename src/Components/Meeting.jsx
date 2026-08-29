@@ -21,34 +21,29 @@ export default function Meeting() {
 
     const { socket } = useSocket();
     const localVideoRef = useRef(null);
-    const [isChatOpen, setIsChatOpen] = useState(false);
 
+    const [isChatOpen, setIsChatOpen] = useState(false);
     const navigate = useNavigate();
 
-    // ** New state for confirmation modals **
     const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
 
-    console.log('🔌 Meeting: Socket object received:', socket ? 'EXISTS ✓' : 'NULL ✗');
-    console.log('🔌 Meeting: Socket connected:', socket?.connected);
-
-    // Load roomId, userId, isHost from localStorage
+    // Load localStorage data only once
     useEffect(() => {
         const storedRoomId = localStorage.getItem("roomId") || "";
-        const user = localStorage.getItem("userId") || "";
+        const storedUserId = localStorage.getItem("userId") || "";
         const hostFlag = localStorage.getItem("isHost") === "true";
 
         setRoomId(storedRoomId);
-        setUserId(user);
+        setUserId(storedUserId);
         setIsHost(hostFlag);
 
-        console.log('📦 localStorage roomId:', storedRoomId || 'EMPTY');
-        console.log('📦 localStorage userId:', user || 'EMPTY');
+        console.log('📦 localStorage roomId:', storedRoomId || "EMPTY");
+        console.log('📦 localStorage userId:', storedUserId || "EMPTY");
         console.log('📦 localStorage isHost:', hostFlag);
-        console.log('✅ State set');
     }, []);
 
-    // Join room on socket
+    // Automatically join the room via socket once available
     useEffect(() => {
         if (!socket || !roomId || !userId) {
             console.log("⚠️ join-room skipped", { hasSocket: !!socket, roomId, userId });
@@ -67,13 +62,8 @@ export default function Meeting() {
         toggleVideo
     } = useWebRTC(socket, roomId, userId);
 
-    // Show local video when ready
     useEffect(() => {
-        console.log('🎚️ localStreamReady changed:', localStreamReady);
-        if (!localStreamReady) {
-            console.log("⏳ Waiting for localStreamReady...");
-            return;
-        }
+        if (!localStreamReady) return;
         if (localVideoRef.current && localStream) {
             localVideoRef.current.srcObject = localStream;
             console.log('✅ Local video displayed');
@@ -91,11 +81,7 @@ export default function Meeting() {
     };
 
     const copyRoomId = async () => {
-        console.log('\n📋 Copy button clicked');
-        if (!roomId) {
-            console.warn('⚠️ Cannot copy - roomId is empty');
-            return;
-        }
+        if (!roomId) return;
         try {
             await navigator.clipboard.writeText(roomId);
             console.log('✅ Room ID copied to clipboard:', roomId);
@@ -105,191 +91,108 @@ export default function Meeting() {
     };
 
     const clearMeetingStorage = () => {
-        console.log("🧹 Clearing meeting-related localStorage");
         localStorage.removeItem("roomId");
         localStorage.removeItem("meetTitle");
         localStorage.removeItem("isHost");
     };
 
-    // Handle meeting-ended event from server (host ended meeting)
+    // Listen for server broadcast that meeting ended
     useEffect(() => {
-        if (!socket) {
-            console.warn("⚠️ Meeting: socket not ready for meeting-ended listener");
-            return;
-        }
+        if (!socket) return;
+
         const handleMeetingEnded = (payload) => {
-            console.log("🛑 meeting-ended event received:", payload, "local roomId:", roomId);
+            console.log("🛑 meeting-ended event received:", payload);
             clearMeetingStorage();
             toast.info("Meeting ended by host");
             navigate("/home");
         };
+
         socket.on("meeting-ended", handleMeetingEnded);
         return () => {
             socket.off("meeting-ended", handleMeetingEnded);
         };
-    }, [socket, roomId, navigate]);
+    }, [socket, navigate]);
 
-    // --- NEW: polling + status-check fallback in case socket broadcast missed ---
+    // Single check on mount (detect 404 or meeting ended)
     useEffect(() => {
         if (!roomId) return;
 
-        let intervalId = null;
-        const POLL_INTERVAL = 10000; // 10 seconds
-
-        const checkMeetingStatus = async () => {
+        const checkMeetingStatusOnce = async () => {
             try {
                 const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/status`);
                 if (!res.ok) {
-                    // treat as ended / not found room
-                    throw new Error('Room not found / ended');
-                }
-                const data = await res.json();
-                // adjust check depending on what your /status endpoint returns
-                // assume { ended: boolean } or { exists: boolean }
-                if (data.ended || data.exists === false) {
-                    console.log('🔍 Polling detected meeting ended — redirecting');
+                    console.warn("⚠️ Meeting status check failed (not found or ended)");
                     clearMeetingStorage();
-                    toast.info("Meeting ended");
+                    toast.info("Meeting not found / ended");
                     navigate("/home");
+                    return;
                 }
+                // optional: inspect res.json() here for ended flag if available
             } catch (err) {
-                console.warn('⚠️ status-check failed or meeting likely ended:', err);
-                // Optionally treat this as ended — uncomment if you want failure → redirect
-                // clearMeetingStorage();
-                // toast.info("Meeting ended");
-                // navigate("/home");
+                console.error("❌ Meeting status check error:", err);
             }
         };
 
-        // initial check
-        checkMeetingStatus();
-
-        // then periodic checks
-        intervalId = setInterval(checkMeetingStatus, POLL_INTERVAL);
-
-        // cleanup on unmount
-        return () => {
-            if (intervalId) clearInterval(intervalId);
-        };
+        checkMeetingStatusOnce();
     }, [roomId, navigate]);
 
-    // --- NEW: on socket reconnect, re-check status immediately ---
-    useEffect(() => {
-        if (!socket) return;
-        const handleReconnect = () => {
-            console.log('🔄 socket reconnected — checking meeting status');
-            if (!roomId) return;
-            fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/status`)
-                .then(res => {
-                    if (!res.ok) throw new Error('Room fetch failed');
-                    return res.json();
-                })
-                .then(data => {
-                    if (data.ended || data.exists === false) {
-                        clearMeetingStorage();
-                        toast.info("Meeting ended");
-                        navigate("/home");
-                    }
-                })
-                .catch(err => {
-                    console.warn('⚠️ status-check on reconnect failed or room ended', err);
-                    // optionally redirect
-                });
-        };
-
-        socket.on("connect", handleReconnect);
-        return () => {
-            socket.off("connect", handleReconnect);
-        };
-    }, [socket, roomId, navigate]);
-    // --- end of polling fallback additions ---
-
     const leaveMeeting = async () => {
-        if (!roomId) {
-            console.warn("⚠️ leaveMeeting: roomId missing");
-            return;
-        }
         const token = localStorage.getItem("loginToken");
-        if (!token) {
-            console.warn("⚠️ leaveMeeting: loginToken missing");
-        }
         try {
-            console.log(`🚪 Leaving meeting (participant) | roomId: ${roomId}`);
+            console.log(`🚪 Leaving meeting | roomId: ${roomId}`);
             const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/leave`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
+                    "Authorization": `Bearer ${token}`
+                }
             });
-            const data = await res.json().catch(() => ({}));
-            console.log("📥 leaveMeeting response:", res.status, data);
+
             if (res.status === 404) {
-                console.warn("ℹ️ Meeting not found (probably ended). Treating as left.");
+                console.warn("ℹ️ Meeting not found (probably ended)");
                 clearMeetingStorage();
                 navigate("/home");
                 return;
             }
+
             if (!res.ok) {
-                console.error("❌ Failed to leave meeting", data);
-                toast.error(data.message || data.error || `Failed to leave meeting (status: ${res.status})`);
+                const data = await res.json().catch(() => ({}));
+                toast.error(data.message || "Failed to leave meeting");
                 return;
             }
-            console.log("✅ Left meeting successfully");
+
             clearMeetingStorage();
-            toast.success("Meeting left successfully");
+            toast.success("Left meeting successfully");
             navigate("/home");
         } catch (err) {
-            console.error("❌ leaveMeeting error:", err);
             toast.error("Error leaving meeting");
         }
     };
 
     const endMeeting = async () => {
-        if (!roomId) {
-            console.warn("⚠️ endMeeting: roomId missing");
-            return;
-        }
         const token = localStorage.getItem("loginToken");
-        if (!token) {
-            console.warn("⚠️ endMeeting: loginToken missing");
-        }
         try {
             console.log(`🛑 Ending meeting (host) | roomId: ${roomId}`);
             const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/end`, {
                 method: "DELETE",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`,
-                },
+                    "Authorization": `Bearer ${token}`
+                }
             });
-            const data = await res.json().catch(() => ({}));
-            console.log("📥 endMeeting response:", res.status, data);
-            if (!res.ok) {
-                console.error("❌ Failed to end meeting", data);
-                toast.error(data.message || data.error || `Failed to end meeting (status: ${res.status})`);
-                return;
-            }
-            // inside endMeeting(), after successful fetch:
-            if (res.ok) {
-                console.log("✅ Meeting ended successfully");
-                clearMeetingStorage();
-                toast.success("Meeting ended successfully");
-                // 🔹 Force-redirect host:
-                navigate("/home");
-                return;
-            }
-        } catch (err) {
-            console.error("❌ endMeeting error:", err);
-            toast.error("Error ending meeting");
-        }
-    };
 
-    const handleEndOrLeave = () => {
-        if (isHost) {
-            setShowEndConfirmModal(true);
-        } else {
-            setShowLeaveConfirmModal(true);
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                toast.error(data.message || "Failed to end meeting");
+                return;
+            }
+
+            clearMeetingStorage();
+            toast.success("Meeting ended successfully");
+            navigate("/home");
+        } catch (err) {
+            toast.error("Error ending meeting");
         }
     };
 
@@ -327,28 +230,12 @@ export default function Meeting() {
                 </div>
 
                 <div className="toolbuttons">
-                    <button
-                        className={`btn mic-btn ${!isMicOn ? "btn-off" : ""}`}
-                        onClick={handleMicToggle}
-                        title={isMicOn ? "Mute microphone" : "Unmute microphone"}
-                        disabled={!localStreamReady}
-                    >
-                        <img
-                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-                            alt={isMicOn ? "Mic On" : "Mic Off"}
-                        />
+                    <button className={`btn mic-btn ${!isMicOn ? "btn-off" : ""}`} onClick={handleMicToggle} disabled={!localStreamReady}>
+                        <img src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"} alt="" />
                     </button>
 
-                    <button
-                        className={`btn video-btn ${!isVideoOn ? "btn-off" : ""}`}
-                        onClick={handleVideoToggle}
-                        title={isVideoOn ? "Turn off camera" : "Turn on camera"}
-                        disabled={!localStreamReady}
-                    >
-                        <img
-                            src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"}
-                            alt={isVideoOn ? "Video On" : "Video Off"}
-                        />
+                    <button className={`btn video-btn ${!isVideoOn ? "btn-off" : ""}`} onClick={handleVideoToggle} disabled={!localStreamReady}>
+                        <img src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"} alt="" />
                     </button>
 
                     <button className="btn raiseHand-btn">
@@ -363,17 +250,13 @@ export default function Meeting() {
                         <img src="/assets/svg/chat.svg" alt="Chat" />
                     </button>
 
-                    <button
-                        className="btn end-btn"
-                        onClick={handleEndOrLeave}
-                        title={isHost ? "End meeting for everyone" : "Leave meeting"}
-                    >
+                    <button className="btn end-btn" onClick={() => (isHost ? setShowEndConfirmModal(true) : setShowLeaveConfirmModal(true))}>
                         <img src="/assets/svg/endcall.svg" alt="End Call" />
                     </button>
                 </div>
 
                 <div className="room-id-box">
-                    <span className="room-id-label">Title:</span> {/* changed label? keep previous */}
+                    <span className="room-id-label">Room ID:</span>
                     <span className="room-id-value">{roomId}</span>
                     <button className="copy-btn" onClick={copyRoomId}>
                         <img src="/assets/svg/copyCode.svg" alt="copy room id" />
@@ -390,7 +273,6 @@ export default function Meeting() {
                 userName={userName}
             />
 
-            {/* Confirmation Modal for Host: End Meeting */}
             {showEndConfirmModal && (
                 <div className="modal-backdrop">
                     <div className="modal-box">
@@ -406,7 +288,6 @@ export default function Meeting() {
                 </div>
             )}
 
-            {/* Confirmation Modal for Participant: Leave Meeting */}
             {showLeaveConfirmModal && (
                 <div className="modal-backdrop">
                     <div className="modal-box">
@@ -431,21 +312,15 @@ function RemoteVideo({ stream, userId }) {
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream;
-            console.log('🎥 Remote video displayed for user:', userId);
             videoRef.current.play().catch(err => {
-                console.error('Error playing remote video:', err);
+                console.error('Remote play error:', err);
             });
         }
-    }, [stream, userId]);
+    }, [stream]);
 
     return (
         <div className="video-container">
-            <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="remote-video"
-            />
+            <video ref={videoRef} autoPlay playsInline className="remote-video" />
             <span className="video-label">User {userId.substring(0, 8)}</span>
         </div>
     );
