@@ -4,56 +4,99 @@ export default function useScreenShare({
     peerConnectionsRef,
     localStreamRef,
     localVideoRef,
+    socket,   // 🟢 Added: Needed to notify backend
+    roomId    // 🟢 Added: Needed for socket event payload
 }) {
     const [isScreenSharing, setIsScreenSharing] = useState(false);
     const screenStreamRef = useRef(null);
 
     const startScreenShare = async () => {
-        const screenStream = await navigator.mediaDevices.getDisplayMedia({
-            video: true,
-            audio: false,
-        });
+        try {
+            // 1. Get the screen stream
+            const screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { cursor: "always" },
+                audio: false, // Change to true if you want to share system audio
+            });
 
-        const screenTrack = screenStream.getVideoTracks()[0];
-        screenStreamRef.current = screenStream;
+            const screenTrack = screenStream.getVideoTracks()[0];
+            screenStreamRef.current = screenStream;
 
-        Object.values(peerConnectionsRef.current).forEach((pc) => {
-            const sender = pc
-                .getSenders()
-                .find((s) => s.track?.kind === "video");
+            // 2. Replace the video track for all connected peers
+            // We use Promise.all to ensure we don't proceed until tracks are replaced
+            const promises = Object.values(peerConnectionsRef.current).map((pc) => {
+                const sender = pc.getSenders().find((s) => s.track?.kind === "video");
 
-            sender?.replaceTrack(screenTrack);
-        });
+                if (sender) {
+                    return sender.replaceTrack(screenTrack);
+                }
+                // If the user joined with video OFF, there might not be a video sender.
+                // In a robust app, you would add a track here, but replaceTrack is safer for now.
+                return Promise.resolve();
+            });
 
-        if (localVideoRef.current) {
-            localVideoRef.current.srcObject = screenStream;
+            await Promise.all(promises);
+
+            // 3. Update local view to show what you are sharing
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = screenStream;
+            }
+
+            // 4. Notify Backend
+            if (socket && roomId) {
+                socket.emit('start-screen-share', { roomId });
+            }
+
+            setIsScreenSharing(true);
+
+            // 5. Handle "Stop Sharing" via Browser UI (floating toolbar)
+            screenTrack.onended = () => {
+                stopScreenShare();
+            };
+
+        } catch (error) {
+            console.error("❌ Error starting screen share:", error);
         }
-
-        setIsScreenSharing(true);
-
-        screenTrack.onended = stopScreenShare;
     };
 
-    const stopScreenShare = () => {
-        const cameraTrack =
-            localStreamRef.current?.getVideoTracks?.()[0];
+    const stopScreenShare = async () => {
+        try {
+            // 1. Get the original camera track (if it exists)
+            const cameraTrack = localStreamRef.current?.getVideoTracks()[0];
 
-        Object.values(peerConnectionsRef.current).forEach((pc) => {
-            const sender = pc
-                .getSenders()
-                .find((s) => s.track?.kind === "video");
+            // 2. Revert track on all peer connections
+            const promises = Object.values(peerConnectionsRef.current).map((pc) => {
+                const sender = pc.getSenders().find((s) => s.track?.kind === "video");
 
-            if (sender && cameraTrack) sender.replaceTrack(cameraTrack);
-        });
+                if (sender) {
+                    // Switch back to camera, or null if camera was off
+                    return sender.replaceTrack(cameraTrack || null);
+                }
+                return Promise.resolve();
+            });
 
-        if (localVideoRef.current && localStreamRef.current) {
-            localVideoRef.current.srcObject = localStreamRef.current;
+            await Promise.all(promises);
+
+            // 3. Revert local video view
+            if (localVideoRef.current) {
+                localVideoRef.current.srcObject = localStreamRef.current;
+            }
+
+            // 4. Stop the screen share stream tracks
+            if (screenStreamRef.current) {
+                screenStreamRef.current.getTracks().forEach((t) => t.stop());
+                screenStreamRef.current = null;
+            }
+
+            // 5. Notify Backend
+            if (socket && roomId) {
+                socket.emit('stop-screen-share', { roomId });
+            }
+
+            setIsScreenSharing(false);
+
+        } catch (error) {
+            console.error("❌ Error stopping screen share:", error);
         }
-
-        screenStreamRef.current?.getTracks().forEach((t) => t.stop());
-        screenStreamRef.current = null;
-
-        setIsScreenSharing(false);
     };
 
     return {

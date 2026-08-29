@@ -8,7 +8,6 @@ import { toast } from "react-toastify";
 import ParticipantsPanel from "./ParticipantsPanel";
 import useScreenShare from "../Hooks/useScreenShare";
 
-
 export default function Meeting() {
     const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
@@ -49,7 +48,9 @@ export default function Meeting() {
         localStreamReady,
         remoteStreams,
         toggleMic,
-        toggleVideo
+        toggleVideo,
+        localStreamRef,
+        peerConnectionsRef,
     } = useWebRTC(socket, roomId, userId);
 
     const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
@@ -78,7 +79,6 @@ export default function Meeting() {
         };
     }, [socket]);
 
-    // const handleMicToggle = () => setIsMicOn(toggleMic());
     const handleMicToggle = () => {
         const newState = toggleMic();
         setIsMicOn(newState);
@@ -199,12 +199,6 @@ export default function Meeting() {
         }
     };
 
-    //For screenshare
-    const {
-        localStreamRef,
-        peerConnectionsRef,
-    } = useWebRTC(socket, roomId, userId);
-
     const {
         isScreenSharing,
         startScreenShare,
@@ -213,8 +207,9 @@ export default function Meeting() {
         peerConnectionsRef,
         localStreamRef,
         localVideoRef,
+        socket,
+        roomId
     });
-
 
     return (
         <div className="layout">
@@ -240,9 +235,6 @@ export default function Meeting() {
                     </span>
                 </div>
 
-                {/* {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
-                    <RemoteVideo key={remoteUserId} stream={stream} userId={remoteUserId} />
-                ))} */}
                 {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
                     <RemoteVideo
                         key={remoteUserId}
@@ -326,12 +318,6 @@ export default function Meeting() {
                 userName={userName}
             />
 
-            {/* <ParticipantsPanel
-                isOpen={isParticipantsOpen}
-                onClose={() => setIsParticipantsOpen(false)}
-                roomId={roomId}
-                currentUserId={userId}
-            /> */}
             <ParticipantsPanel
                 isOpen={isParticipantsOpen}
                 onClose={() => setIsParticipantsOpen(false)}
@@ -362,46 +348,6 @@ export default function Meeting() {
         </div>
     );
 }
-
-// function RemoteVideo({ stream, isMicOn = true }) {
-//     const videoRef = useRef(null);
-//     const [isMicOn, setIsMicOn] = useState(true);
-
-//     useEffect(() => {
-//         if (!videoRef.current || !stream) return;
-//         videoRef.current.srcObject = stream;
-//         videoRef.current.play().catch((err) =>
-//             console.error("Remote play err:", err)
-//         );
-
-//         const audioTrack = stream.getAudioTracks()[0];
-
-//         if (audioTrack) {
-//             setIsMicOn(audioTrack.enabled);
-//             const handleMute = () => setIsMicOn(false);
-//             const handleUnmute = () => setIsMicOn(true);
-//             audioTrack.addEventListener("mute", handleMute);
-//             audioTrack.addEventListener("unmute", handleUnmute);
-//             return () => {
-//                 audioTrack.removeEventListener("mute", handleMute);
-//                 audioTrack.removeEventListener("unmute", handleUnmute);
-//             };
-//         }
-//     }, [stream]);
-
-//     return (
-//         <div className="video-container">
-//             <video ref={videoRef} autoPlay playsInline className="remote-video" />
-//             <span className="video-label">
-//                 <img
-//                     src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-//                     alt=""
-//                 />
-//                 Remote User
-//             </span>
-//         </div>
-//     );
-// }
 
 function RemoteVideo({ stream, isMicOn = true, name = "Remote User" }) {
     const videoRef = useRef(null);
