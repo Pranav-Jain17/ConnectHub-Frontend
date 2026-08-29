@@ -38,7 +38,7 @@ body {
 }
 
 .app-logo {
-    font-size: 1.2rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: #1a3d7c;
     margin: 0;
@@ -311,7 +311,7 @@ body {
     }
 
     .app-logo {
-        font-size: 1.1rem;
+        font-size: 1.4rem;
     }
 
     .user-display-name {

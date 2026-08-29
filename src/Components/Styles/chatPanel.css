@@ -1,4 +1,3 @@
-/* 1. WRAPPER & BACKDROP */
 .chat-panel-wrapper {
     position: fixed;
     inset: 0;
@@ -25,17 +24,14 @@
     background: rgba(0, 0, 0, 0.25);
 }
 
-/* 2. MAIN PANEL LAYOUT */
 .chat-panel {
     width: 340px;
     max-width: 90vw;
-    /* height: 100dvh makes the panel react to the mobile keyboard resize */
     height: 100dvh;
     background: #ffffff;
     box-shadow: -2px 0 10px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
-    /* This stacks Header, Body, and Footer */
     transform: translateX(100%);
     transition: transform 0.25s ease;
     overflow: hidden;
@@ -45,10 +41,8 @@
     transform: translateX(0);
 }
 
-/* 3. HEADER */
 .chat-panel-header {
     flex-shrink: 0;
-    /* Header stays same size */
     padding: 14px 16px;
     border-bottom: 1px solid #e4e4e4;
     display: flex;
@@ -71,10 +65,8 @@
     padding: 4px;
 }
 
-/* 4. CHAT BODY (SCROLLABLE AREA) */
 .chat-panel-body {
     flex: 1;
-    /* This grows to take all space, but shrinks when keyboard opens */
     padding: 10px 12px;
     overflow-y: auto;
     background: #f7f7f7;
@@ -92,7 +84,6 @@
     font-size: 14px;
 }
 
-/* 5. MESSAGES & BUBBLES */
 .chat-message-row {
     margin-bottom: 10px;
     max-width: 90%;
@@ -146,9 +137,7 @@
     border-bottom-left-radius: 4px;
 }
 
-/* 6. FOOTER (INPUT AREA) */
 .chat-panel-footer {
-    /* Removed position: absolute so it stays in the flex flow */
     flex-shrink: 0;
     padding: 8px;
     border-top: 1px solid #e4e4e4;
@@ -192,7 +181,6 @@
     background: #1558b8;
 }
 
-/* 7. MEDIA QUERIES (RETAINED) */
 @media (max-width: 1024px) {
     .chat-panel {
         width: 360px;
@@ -225,7 +213,6 @@
     }
 }
 
-/* Viewport unit support for landscape/portrait */
 @media (max-width: 768px) {
     .chat-panel {
         height: 100dvh;

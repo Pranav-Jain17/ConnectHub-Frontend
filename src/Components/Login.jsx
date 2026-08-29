@@ -1,6 +1,6 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import "./login.css";
+import "./Styles/login.css";
 import { toast } from "react-toastify";
 
 function Login() {
@@ -11,7 +11,6 @@ function Login() {
     const [error, setError] = useState(null);
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
-
     const passwordRef = useRef(null);
     const cursorPosRef = useRef(null);
 
@@ -30,6 +29,13 @@ function Login() {
             input.focus();
         }
     }, [showPassword]);
+
+    useEffect(() => {
+        const token = localStorage.getItem('loginToken');
+        if (token) {
+            navigate('/home', { replace: true });
+        }
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -66,7 +72,7 @@ function Login() {
             localStorage.setItem('userId', data.userId);
             localStorage.setItem('userName', data.username);
             toast.success("Logged in successfully!");
-            navigate('/home');
+            navigate('/home', { replace: true });
         } catch (err) {
             setError('! Enter a valid email/username or password');
         }
@@ -153,7 +159,7 @@ function Login() {
                                 />
                                 Remember Me
                             </label>
-                            <a className="forgot-password" href="/forgot-password">Forgot Password?</a>
+                            {/* <a className="forgot-password" href="/forgot-password">Forgot Password?</a> */}
                         </div>
                         <button type="submit" className="btn-login">Login</button>
                     </form>

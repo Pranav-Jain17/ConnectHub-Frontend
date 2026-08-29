@@ -1,0 +1,236 @@
+.toolbar {
+    height: 80px;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    background: rgb(224, 224, 239);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 101;
+}
+
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toolbar-left {
+    flex: 1;
+    justify-content: flex-start;
+}
+
+.toolbar-center {
+    flex: 2;
+    justify-content: center;
+}
+
+.toolbar-right {
+    flex: 1;
+    justify-content: flex-end;
+    position: relative;
+}
+
+.meet-info-text {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 500;
+    color: #333;
+    font-size: 1.1rem;
+    padding-left: 10px;
+}
+
+.time-display {
+    font-weight: 600;
+}
+
+.separator {
+    color: #999;
+    font-weight: 300;
+    font-size: 1.2rem;
+}
+
+.title-display {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.btn {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: #5c6168;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.btn img,
+.btn svg {
+    width: 22px;
+    height: 22px;
+    filter: brightness(0) invert(1);
+}
+
+.btn:hover {
+    background: #4e545b;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn.end-btn,
+.btn-off {
+    background: #d9534f !important;
+}
+
+.info-btn {
+    background-color: #444;
+    color: white;
+    width: 45px;
+    height: 45px;
+}
+
+.info-btn:hover {
+    background-color: #666;
+}
+
+.desktop-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.mobile-actions {
+    display: none;
+    position: relative;
+}
+
+.more-btn.active {
+    background-color: #333;
+}
+
+.mobile-menu-dropdown {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: black;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    width: 180px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: white;
+    font-weight: 500;
+}
+
+.menu-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.menu-item img,
+.menu-item svg {
+    width: 20px;
+    height: 20px;
+    filter: none;
+}
+
+@media (max-width: 1024px) {
+    .desktop-actions {
+        display: none;
+    }
+
+    .mobile-actions {
+        display: block;
+    }
+
+    .btn {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+@media (max-width: 1024px) and (orientation: portrait) {
+    .toolbar {
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 760px) {
+    .toolbar {
+        padding: 0 10px;
+        height: 70px;
+        min-height: 70px;
+        flex-wrap: nowrap;
+    }
+
+    .toolbar-left {
+        flex: 0 0 auto;
+        justify-content: flex-start;
+    }
+
+    .toolbar-center {
+        flex: 1;
+        gap: 8px;
+    }
+
+    .toolbar-right {
+        flex: 0 0 auto;
+    }
+
+    .meet-info-text {
+        font-size: 0.85rem;
+        padding-left: 0;
+        gap: 0;
+    }
+
+    .meet-info-text .separator,
+    .meet-info-text .title-display {
+        display: none;
+    }
+
+    .btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .btn img,
+    .btn svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .btn {
+        width: 38px;
+        height: 38px;
+    }
+
+    .toolbar-center {
+        gap: 8px;
+    }
+}

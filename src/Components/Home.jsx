@@ -1,22 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './home.css';
+import { useState, useEffect, useRef } from 'react';
+import './Styles/home.css';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
 function Home() {
     const navigate = useNavigate();
     const dropdownRef = useRef(null);
-
-    // Get stored data
     const userName = localStorage.getItem("userName") || "User";
     const loginToken = localStorage.getItem("loginToken");
-
-    // NEW STATE: for profile dropdown and modals
     const [showDropdown, setShowDropdown] = useState(false);
     const [modalType, setModalType] = useState(null);
     const [inputValue, setInputValue] = useState("");
 
-    // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -30,7 +25,6 @@ function Home() {
     const createMeeting = async (meetTitle) => {
         const now = new Date().toISOString();
         const payload = { title: meetTitle, scheduledAt: now };
-
         const response = await fetch('https://connecthub.dikshant-ahalawat.live/meetings', {
             method: 'POST',
             headers: {
@@ -185,7 +179,6 @@ function Home() {
                 </div>
             </div>
 
-            {/* Modals remain the same */}
             {modalType && (
                 <div className="modal-backdrop">
                     <div className="modal-box">

@@ -1,39 +1,53 @@
-import React, { useEffect, useRef, useState } from "react";
-import "./chatPanel.css";
+import { useEffect, useRef, useState } from "react";
+import "./Styles/chatPanel.css";
 
 export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, userName }) {
+
     const [messages, setMessages] = useState([]);
     const [text, setText] = useState("");
     const messagesEndRef = useRef(null);
+    const onCloseRef = useRef(onClose);
 
-    console.log("💬 ChatPanel Rendered | isOpen:", isOpen, "| roomId:", roomId);
+    useEffect(() => {
+        onCloseRef.current = onClose;
+    }, [onClose]);
 
-    // 1. Auto scroll when messages change
+    useEffect(() => {
+        if (isOpen) {
+            window.history.pushState({ panel: "chat" }, "", window.location.href);
+            const handlePopState = (event) => {
+                event.preventDefault();
+                if (onCloseRef.current) {
+                    onCloseRef.current();
+                }
+            };
+            window.addEventListener("popstate", handlePopState);
+            return () => {
+                window.removeEventListener("popstate", handlePopState);
+                if (window.history.state && window.history.state.panel === "chat") {
+                    window.history.back();
+                }
+            };
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         if (messagesEndRef.current) {
-            console.log("⬇️ ChatPanel: Auto-scrolling to bottom");
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
         }
     }, [messages, isOpen]);
 
-    // 2. Load chat history when panel opens
     useEffect(() => {
         if (!isOpen) {
-            console.log("🚪 ChatPanel closed — not loading history");
             return;
         }
         if (!roomId) {
-            console.warn("⚠️ ChatPanel: Cannot load chat history — roomId missing");
             return;
         }
-
-        console.log("📥 ChatPanel: Loading chat history for room:", roomId);
 
         async function loadHistory() {
             try {
                 const token = localStorage.getItem("loginToken");
-                console.log("📡 Fetching history from API...");
-
                 const res = await fetch(`https://connecthub.dikshant-ahalawat.live/chat/${roomId}`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -42,54 +56,38 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                 });
 
                 if (!res.ok) {
-                    console.error("❌ Chat history fetch failed. Status:", res.status);
+                    console.error("Chat history fetch failed. Status:", res.status);
                 }
 
                 const data = await res.json();
-                console.log(`📜 Chat history loaded: ${data.length} messages`);
                 setMessages(data);
             } catch (err) {
-                console.error("❌ ChatPanel: Error loading history:", err);
+                console.error("ChatPanel: Error loading history:", err);
             }
         }
-
         loadHistory();
     }, [isOpen, roomId]);
 
-    // 3. Listen for new messages from socket
     useEffect(() => {
         if (!socket) {
-            console.warn("⚠️ ChatPanel: Socket not ready — cannot listen for messages");
             return;
         }
-
-        console.log("🔌 ChatPanel: Socket listener attached -> receive-chat-message");
-
         const handleReceive = (msg) => {
-            console.log("📨 ChatPanel: Received message via socket:", msg);
             setMessages(prev => [...prev, msg]);
         };
-
         socket.on("receive-chat-message", handleReceive);
-
         return () => {
-            console.log("🔌 ChatPanel: Removing socket listener -> receive-chat-message");
             socket.off("receive-chat-message", handleReceive);
         };
     }, [socket]);
 
-    // 4. Send message
     const sendMessage = () => {
         const trimmed = text.trim();
-        console.log("✏️ ChatPanel: Send attempt:", trimmed);
-
         if (!trimmed) {
-            console.log("⚠️ ChatPanel: Ignoring empty message");
             return;
         }
 
         if (!socket || !roomId) {
-            console.error("❌ ChatPanel: Cannot send — socket or roomId missing");
             return;
         }
 
@@ -100,24 +98,15 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
             message: trimmed
         };
 
-        console.log("📤 ChatPanel: Emitting message to socket:", payload);
         socket.emit("send-chat-message", payload);
         setText("");
-        console.log("✅ ChatPanel: Message sent & input cleared");
     };
-
-    /**
-     * NOTE: The manual viewport calculation logic that used "footer.style.transform" 
-     * was removed because you added interactive-widget=resizes-content to index.html.
-     * Keeping it would cause the "jumping" bug to persist.
-     */
 
     return (
         <div className={`chat-panel-wrapper ${isOpen ? "open" : ""}`}>
             <div
                 className="chat-panel-backdrop"
                 onClick={() => {
-                    console.log("🚪 ChatPanel: Closing via backdrop click");
                     onClose();
                 }}
             />
@@ -128,7 +117,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                     <button
                         className="chat-close-btn"
                         onClick={() => {
-                            console.log("🚪 ChatPanel: Closing via X button");
                             onClose();
                         }}
                     >
@@ -139,7 +127,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                 <div className="chat-panel-body">
                     {messages.map((msg) => {
                         const isMe = msg.senderId === userId;
-                        console.log("📄 Rendering message:", msg);
 
                         return (
                             <div
@@ -164,13 +151,11 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                         className="chat-input"
                         value={text}
                         onChange={(e) => {
-                            console.log("⌨️ ChatPanel: Typing:", e.target.value);
                             setText(e.target.value);
                         }}
                         placeholder="Type a message..."
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
-                                console.log("⏎ ChatPanel: Enter pressed — sending");
                                 e.preventDefault();
                                 sendMessage();
                             }
@@ -180,7 +165,6 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
                     <button
                         className="chat-send-btn"
                         onClick={() => {
-                            console.log("📩 ChatPanel: Send button clicked");
                             sendMessage();
                         }}
                     >

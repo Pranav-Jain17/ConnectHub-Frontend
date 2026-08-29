@@ -1,7 +1,7 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import { useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import "./signup.css";
+import "./Styles/signup.css";
 
 function Signup() {
     const [username, setUsername] = useState('');
@@ -10,7 +10,6 @@ function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
-
     const passwordRef = useRef(null);
     const cursorRef = useRef(null);
 

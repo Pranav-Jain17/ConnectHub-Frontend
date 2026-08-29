@@ -1,47 +1,46 @@
-import React, { useEffect, useState, useRef } from "react";
-import "./meeting.css";
-import { useSocket } from "../Providers/Socket";
-import { useWebRTC } from "../Hooks/useWebRTC";
-import ChatPanel from "./ChatPanel";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import ParticipantsPanel from "./ParticipantsPanel";
+import "./Styles/meeting.css";
+import { useSocket } from "../Providers/Socket";
+import { useWebRTC } from "../Hooks/useWebRTC";
 import useScreenShare from "../Hooks/useScreenShare";
+import { useParticipants } from "../Hooks/useParticipants";
+
+import ChatPanel from "./ChatPanel";
+import ParticipantsPanel from "./ParticipantsPanel";
+import VideoGrid from "./VideoGrid";
+import MeetingToolbar from "./MeetingToolbar";
+import { InfoModal, ConfirmationModal } from "./MeetingModals";
 
 export default function Meeting() {
+    const navigate = useNavigate();
+    const { socket } = useSocket();
+
     const [roomId, setRoomId] = useState("");
     const [userId, setUserId] = useState("");
+    const [isHost, setIsHost] = useState(false);
+
     const [isMicOn, setIsMicOn] = useState(true);
     const [isVideoOn, setIsVideoOn] = useState(true);
-    const [isHost, setIsHost] = useState(false);
+    const [peerMicState, setPeerMicState] = useState({});
+
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+    const [showInfoModal, setShowInfoModal] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
+
     const [showEndConfirmModal, setShowEndConfirmModal] = useState(false);
     const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
 
-    const { socket } = useSocket();
+    const [currentTime, setCurrentTime] = useState("");
+
     const localVideoRef = useRef(null);
-    const navigate = useNavigate();
-    const [peerMicState, setPeerMicState] = useState({});
-    const [participants, setParticipants] = useState([]);
 
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
 
-    useEffect(() => {
-        const storedRoomId = localStorage.getItem("roomId");
-        const storedUserId = localStorage.getItem("userId");
-
-        if (!storedRoomId || !storedUserId) {
-            console.warn("🚫 No active meeting found. Redirecting to home.");
-            navigate("/home", { replace: true });
-            return;
-        }
-
-        setRoomId(storedRoomId);
-        setUserId(storedUserId);
-        setIsHost(localStorage.getItem("isHost") === "true");
-    }, [navigate]);
+    const { participants } = useParticipants(roomId, socket);
 
     const {
         localStream,
@@ -53,7 +52,41 @@ export default function Meeting() {
         peerConnectionsRef,
     } = useWebRTC(socket, roomId, userId);
 
+    const {
+        isScreenSharing,
+        startScreenShare,
+        stopScreenShare,
+    } = useScreenShare({
+        peerConnectionsRef,
+        localStreamRef,
+        localVideoRef,
+        socket,
+        roomId
+    });
+
     const isAlone = !remoteStreams || Object.keys(remoteStreams).length === 0;
+
+    const participantNameMap = useMemo(() => {
+        const map = {};
+        participants.forEach((p) => {
+            map[p._id] = p.username || "Unknown User";
+        });
+        return map;
+    }, [participants]);
+
+    useEffect(() => {
+        const storedRoomId = localStorage.getItem("roomId");
+        const storedUserId = localStorage.getItem("userId");
+
+        if (!storedRoomId || !storedUserId) {
+            navigate("/home", { replace: true });
+            return;
+        }
+
+        setRoomId(storedRoomId);
+        setUserId(storedUserId);
+        setIsHost(localStorage.getItem("isHost") === "true");
+    }, [navigate]);
 
     useEffect(() => {
         if (!localStreamReady) return;
@@ -66,53 +99,14 @@ export default function Meeting() {
         if (!socket) return;
 
         const handlePeerMicState = ({ userId: peerId, isMicOn }) => {
-            setPeerMicState((prev) => ({
-                ...prev,
-                [peerId]: isMicOn,
-            }));
+            setPeerMicState((prev) => ({ ...prev, [peerId]: isMicOn }));
         };
 
         socket.on("peer-mic-state", handlePeerMicState);
-
         return () => {
             socket.off("peer-mic-state", handlePeerMicState);
         };
     }, [socket]);
-
-    const handleMicToggle = () => {
-        const newState = toggleMic();
-        setIsMicOn(newState);
-
-        socket?.emit("mic-toggle", { isMicOn: newState });
-    };
-
-    const handleVideoToggle = () => setIsVideoOn(toggleVideo());
-
-    const copyRoomId = async () => {
-        if (!roomId) return;
-        try {
-            await navigator.clipboard.writeText(roomId);
-            toast.success("Room ID copied");
-        } catch (err) {
-            console.error("❌ Failed to copy:", err);
-        }
-    };
-
-    const participantNameMap = React.useMemo(() => {
-        const map = {};
-        participants.forEach((p) => {
-            map[p._id] = p.username || "Unknown User";
-        });
-        return map;
-    }, [participants]);
-
-    const clearMeetingStorage = () => {
-        localStorage.removeItem("roomId");
-        localStorage.removeItem("meetTitle");
-        localStorage.removeItem("isHost");
-        // 🔥 wipe browser history state
-        window.history.replaceState(null, "", "/home");
-    };
 
     useEffect(() => {
         if (!socket) return;
@@ -137,13 +131,56 @@ export default function Meeting() {
         };
     }, [socket, navigate]);
 
-    const leaveMeeting = async () => {
-        const token = localStorage.getItem("loginToken");
-        const finalizeLeave = () => {
-            clearMeetingStorage();
-            navigate("/home", { replace: true });
+    useEffect(() => {
+        window.history.pushState(null, document.title, window.location.href);
+
+        const handlePopState = () => {
+            window.history.pushState(null, document.title, window.location.href);
+            if (isHost) setShowEndConfirmModal(true);
+            else setShowLeaveConfirmModal(true);
         };
 
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [isHost]);
+
+    useEffect(() => {
+        const updateTime = () => {
+            const now = new Date();
+            setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }));
+        };
+        updateTime();
+        const timer = setInterval(updateTime, 1000 * 60);
+        return () => clearInterval(timer);
+    }, []);
+
+    const handleMicToggle = () => {
+        const newState = toggleMic();
+        setIsMicOn(newState);
+        socket?.emit("mic-toggle", { isMicOn: newState });
+    };
+
+    const handleVideoToggle = () => setIsVideoOn(toggleVideo());
+
+    const copyRoomId = async () => {
+        if (!roomId) return;
+        try {
+            await navigator.clipboard.writeText(roomId);
+            toast.success("Room ID copied");
+        } catch (err) {
+            console.error("Failed to copy:", err);
+        }
+    };
+
+    const clearMeetingStorage = () => {
+        localStorage.removeItem("roomId");
+        localStorage.removeItem("meetTitle");
+        localStorage.removeItem("isHost");
+        window.history.replaceState(null, "", "/home");
+    };
+
+    const leaveMeeting = async () => {
+        const token = localStorage.getItem("loginToken");
         try {
             const res = await fetch(
                 `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/leave`,
@@ -158,15 +195,17 @@ export default function Meeting() {
 
             if (res.ok || res.status === 404) {
                 toast.success("Left meeting successfully");
-                finalizeLeave();
+                clearMeetingStorage();
+                navigate("/home", { replace: true });
             } else {
-                const data = await res.json().catch(() => ({}));
-                toast.error(data.message || "Failed to leave meeting");
-                finalizeLeave();
+                toast.error("Failed to leave meeting");
+                clearMeetingStorage();
+                navigate("/home", { replace: true });
             }
         } catch (err) {
             toast.error("Error leaving meeting");
-            finalizeLeave();
+            clearMeetingStorage();
+            navigate("/home", { replace: true });
         }
     };
 
@@ -184,14 +223,12 @@ export default function Meeting() {
                 }
             );
 
-            const data = await res.json().catch(() => ({}));
-
             if (res.ok) {
                 clearMeetingStorage();
                 toast.info("Meeting ended successfully");
                 navigate("/home", { replace: true });
             } else {
-                toast.error(data.message || "Failed to end meeting");
+                toast.error("Failed to end meeting");
             }
         } catch (err) {
             toast.error("Error ending meeting");
@@ -199,17 +236,12 @@ export default function Meeting() {
         }
     };
 
-    const {
-        isScreenSharing,
-        startScreenShare,
-        stopScreenShare,
-    } = useScreenShare({
-        peerConnectionsRef,
-        localStreamRef,
-        localVideoRef,
-        socket,
-        roomId
-    });
+    const handleMobileAction = (action) => {
+        setShowMoreMenu(false);
+        if (action === 'info') setShowInfoModal(true);
+        if (action === 'chat') setIsChatOpen(true);
+        if (action === 'participants') setIsParticipantsOpen(true);
+    };
 
     return (
         <div className="layout">
@@ -217,97 +249,35 @@ export default function Meeting() {
                 <div className="logo">ConnectHub</div>
             </header>
 
-            <main className={`content-gap ${isAlone ? "single-mode" : "split-mode"}`}>
-                <div className="video-container">
-                    <video
-                        ref={localVideoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="local-video"
-                    />
-                    <span className="video-label">
-                        <img
-                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-                            alt=""
-                        />
-                        {userName} {isHost && "(Host)"}
-                    </span>
-                </div>
+            <VideoGrid
+                localVideoRef={localVideoRef}
+                isMicOn={isMicOn}
+                userName={userName}
+                isHost={isHost}
+                remoteStreams={remoteStreams}
+                peerMicState={peerMicState}
+                participantNameMap={participantNameMap}
+                isAlone={isAlone}
+            />
 
-                {remoteStreams && Object.entries(remoteStreams).map(([remoteUserId, stream]) => (
-                    <RemoteVideo
-                        key={remoteUserId}
-                        stream={stream}
-                        isMicOn={peerMicState[remoteUserId]}
-                        name={participantNameMap[remoteUserId] || "Remote User"}
-                    />
-                ))}
-            </main>
-
-            <div className="toolbar">
-                <div className="meet-title-box">
-                    <span className="meet-title-value">Meet Title : {meetTitle}</span>
-                </div>
-
-                <div className="toolbuttons">
-                    <button
-                        className={`btn mic-btn ${!isMicOn ? "btn-off" : ""}`}
-                        onClick={handleMicToggle}
-                        disabled={!localStreamReady}
-                    >
-                        <img
-                            src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-                            alt=""
-                        />
-                    </button>
-
-                    <button
-                        className={`btn video-btn ${!isVideoOn ? "btn-off" : ""}`}
-                        onClick={handleVideoToggle}
-                        disabled={!localStreamReady}
-                    >
-                        <img
-                            src={isVideoOn ? "/assets/svg/video.svg" : "/assets/svg/video-off.svg"}
-                            alt=""
-                        />
-                    </button>
-
-                    <button
-                        className={`btn screen-btn ${isScreenSharing ? "btn-off" : ""}`}
-                        onClick={isScreenSharing ? stopScreenShare : startScreenShare}
-                    >
-                        <img
-                            src="/assets/svg/screen-share.svg"
-                            alt="Screen Share"
-                        />
-                    </button>
-
-                    <button className="btn chat-btn" onClick={() => setIsChatOpen(true)}>
-                        <img src="/assets/svg/chat.svg" alt="Chat" />
-                    </button>
-
-                    <button className="btn participant-btn" onClick={() => setIsParticipantsOpen(true)}>
-                        <img src="/assets/svg/participants.svg" alt="participant" />
-                    </button>
-
-                    <button
-                        className="btn end-btn"
-                        onClick={() =>
-                            isHost ? setShowEndConfirmModal(true) : setShowLeaveConfirmModal(true)
-                        }
-                    >
-                        <img src="/assets/svg/endcall.svg" alt="End Call" />
-                    </button>
-                </div>
-
-                <div className="room-id-box">
-                    <span className="room-id-value">Room ID : {roomId}</span>
-                    <button className="copy-btn" onClick={copyRoomId}>
-                        <img src="/assets/svg/copyCode.svg" alt="Copy room id" />
-                    </button>
-                </div>
-            </div>
+            <MeetingToolbar
+                currentTime={currentTime}
+                meetTitle={meetTitle}
+                isMicOn={isMicOn}
+                handleMicToggle={handleMicToggle}
+                localStreamReady={localStreamReady}
+                isVideoOn={isVideoOn}
+                handleVideoToggle={handleVideoToggle}
+                isScreenSharing={isScreenSharing}
+                onScreenShareClick={isScreenSharing ? stopScreenShare : startScreenShare}
+                onEndClick={() => isHost ? setShowEndConfirmModal(true) : setShowLeaveConfirmModal(true)}
+                onInfoClick={() => setShowInfoModal(true)}
+                onChatClick={() => setIsChatOpen(true)}
+                onParticipantsClick={() => setIsParticipantsOpen(true)}
+                showMoreMenu={showMoreMenu}
+                setShowMoreMenu={setShowMoreMenu}
+                handleMobileAction={handleMobileAction}
+            />
 
             <ChatPanel
                 isOpen={isChatOpen}
@@ -321,13 +291,19 @@ export default function Meeting() {
             <ParticipantsPanel
                 isOpen={isParticipantsOpen}
                 onClose={() => setIsParticipantsOpen(false)}
-                roomId={roomId}
-                currentUserId={userId}
-                socket={socket}
                 participants={participants}
-                setParticipants={setParticipants}
+                currentUserId={userId}
+                isLocalUserHost={isHost}
             />
 
+            {showInfoModal && (
+                <InfoModal
+                    meetTitle={meetTitle}
+                    roomId={roomId}
+                    copyRoomId={copyRoomId}
+                    onClose={() => setShowInfoModal(false)}
+                />
+            )}
 
             {showEndConfirmModal && (
                 <ConfirmationModal
@@ -337,6 +313,7 @@ export default function Meeting() {
                     onCancel={() => setShowEndConfirmModal(false)}
                 />
             )}
+
             {showLeaveConfirmModal && (
                 <ConfirmationModal
                     title="Leave Meeting"
@@ -345,57 +322,6 @@ export default function Meeting() {
                     onCancel={() => setShowLeaveConfirmModal(false)}
                 />
             )}
-        </div>
-    );
-}
-
-function RemoteVideo({ stream, isMicOn = true, name = "Remote User" }) {
-    const videoRef = useRef(null);
-
-    useEffect(() => {
-        if (!videoRef.current || !stream) return;
-        videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(() => { });
-    }, [stream]);
-
-    return (
-        <div className="video-container">
-            <video ref={videoRef} autoPlay playsInline className="remote-video" />
-            <span className="video-label">
-                <img
-                    src={isMicOn ? "/assets/svg/mic.svg" : "/assets/svg/mic-off.svg"}
-                    alt=""
-                />
-                {name}
-            </span>
-        </div>
-    );
-}
-
-function ConfirmationModal({ title, message, onConfirm, onCancel }) {
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Enter') {
-                onConfirm();
-            } else if (e.key === 'Escape') {
-                onCancel();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onConfirm, onCancel]);
-
-    return (
-        <div className="modal-backdrop" onClick={onCancel}>
-            <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-                <h2>{title}</h2>
-                <p>{message}</p>
-                <div className="modal-buttons">
-                    <button onClick={onConfirm} autoFocus>Yes</button>
-                    <button onClick={onCancel}>Cancel</button>
-                </div>
-            </div>
         </div>
     );
 }
