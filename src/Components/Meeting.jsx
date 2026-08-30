@@ -154,7 +154,7 @@ export default function Meeting() {
                 setIsRejoining(true);
 
                 const joinData = await apiRequest(
-                    `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/join`,
+                    `http://13.203.104.113/meetings/${roomId}/join`,
                     'POST',
                     { roomId }
                 );
@@ -200,7 +200,7 @@ export default function Meeting() {
             try {
                 const token = localStorage.getItem("loginToken");
                 const res = await fetch(
-                    `https://connecthub.dikshant-ahalawat.live/meetings/${roomId}/participants`,
+                    `http://13.203.104.113/meetings/${roomId}/participants`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const data = await res.json();
@@ -217,7 +217,7 @@ export default function Meeting() {
         console.log("🏁 Calling /end...");
         const token = localStorage.getItem("loginToken");
         try {
-            const res = await fetch('https://connecthub.dikshant-ahalawat.live/meetings/end', {
+            const res = await fetch('http://13.203.104.113/meetings/end', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -290,7 +290,7 @@ export default function Meeting() {
 
             const token = localStorage.getItem("loginToken");
             try {
-                const res = await fetch('https://connecthub.dikshant-ahalawat.live/meetings/chunk', {
+                const res = await fetch('http://13.203.104.113/meetings/chunk', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}` },
                     body: formData,
@@ -511,7 +511,7 @@ export default function Meeting() {
 
         try {
             await fetch(
-                `https://connecthub.dikshant-ahalawat.live/meetings/${currentRoomId}/leave`,
+                `http://13.203.104.113/meetings/${currentRoomId}/leave`,
                 {
                     method: "POST",
                     headers: {

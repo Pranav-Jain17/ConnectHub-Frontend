@@ -46,7 +46,7 @@ function Login() {
         }
 
         try {
-            const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/login', {
+            const response = await fetch('http://13.203.104.113/auth/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -83,7 +83,7 @@ function Login() {
     const handleResetRequest = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/forgot-password', {
+            const response = await fetch('http://13.203.104.113/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: resetEmail })

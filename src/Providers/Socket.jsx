@@ -5,7 +5,7 @@ import { getLoginToken } from "../utils/auth";
 
 export const SocketProvider = (props) => {
     const socket = useMemo(() => {
-        const socketInstance = io('https://connecthub.dikshant-ahalawat.live', {
+        const socketInstance = io('http://13.203.104.113', {
             auth: (cb) => {
                 cb({ token: getLoginToken() });
             },

@@ -15,7 +15,7 @@ export default function Report() {
         if (socket && !socket.connected) {
             socket.connect();
         }
-        
+
         if (socket && meetingId) {
             console.log(`Joining report notification room: ${meetingId}`);
             socket.emit("join-room", meetingId, localStorage.getItem("userId"), localStorage.getItem("userName"));
@@ -26,13 +26,13 @@ export default function Report() {
         try {
             if (!isSilent) setLoading(true);
             setError(null);
-            
+
             const token = localStorage.getItem("loginToken");
             if (!token) {
                 throw new Error("Authentication token not found.");
             }
 
-            const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${meetingId}/report`, {
+            const res = await fetch(`http://13.203.104.113/meetings/${meetingId}/report`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -68,7 +68,7 @@ export default function Report() {
             // Check both meetingId (long ID) and roomId (short code) to match URL parameter
             if (data.meetingId === meetingId || data.roomId === meetingId) {
                 toast.success("AI report is ready!");
-                fetchReport(true); 
+                fetchReport(true);
             }
         };
 
@@ -141,7 +141,7 @@ export default function Report() {
                         <p>AI is still processing your meeting transcript to generate a summary, key topics, and action items.</p>
                         <p><strong>This usually takes about a minute. The report will appear here automatically when ready.</strong></p>
                         <div className="loading-spinner-container">
-                             <div className="loading-spinner"></div>
+                            <div className="loading-spinner"></div>
                         </div>
                     </div>
                 </div>
@@ -152,7 +152,7 @@ export default function Report() {
     const handleDownloadPDF = async () => {
         try {
             const token = localStorage.getItem("loginToken");
-            const res = await fetch(`https://connecthub.dikshant-ahalawat.live/meetings/${meetingId}/report/download`, {
+            const res = await fetch(`http://13.203.104.113/meetings/${meetingId}/report/download`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },

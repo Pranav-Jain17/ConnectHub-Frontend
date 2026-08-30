@@ -32,7 +32,7 @@ function Signup() {
         setError(null);
 
         try {
-            const response = await fetch('https://connecthub.dikshant-ahalawat.live/auth/signup', {
+            const response = await fetch('http://13.203.104.113/auth/signup', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
