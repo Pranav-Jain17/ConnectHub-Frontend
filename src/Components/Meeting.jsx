@@ -198,7 +198,7 @@ export default function Meeting() {
         if (!roomId) return;
         const fetchHostInfo = async () => {
             try {
-                const token = localStorage.getItem("loginToken");
+                const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
                 const res = await fetch(
                     `https://pranavdev.me/meetings/${roomId}/participants`,
                     { headers: { Authorization: `Bearer ${token}` } }
@@ -214,8 +214,9 @@ export default function Meeting() {
 
     // ✅ Finalize meeting — defined outside useEffect so endMeeting can call it too
     const finalizeMeetingEnd = useCallback(async () => {
-        console.log("🏁 Calling /end...");
-        const token = localStorage.getItem("loginToken");
+        console.log("🏁 Caing /end...");
+
+        const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
         try {
             const res = await fetch('https://pranavdev.me/meetings/end', {
                 method: 'POST',
@@ -286,9 +287,10 @@ export default function Meeting() {
             const formData = new FormData();
             formData.append('audio', blob, `chunk-${index}.webm`);
             formData.append('meetingId', roomId);
-            formData.append('chunkIndex', String(index));
+            formData.append('chunkIndex', String(iex));
 
-            const token = localStorage.getItem("loginToken");
+
+            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
             try {
                 const res = await fetch('https://pranavdev.me/meetings/chunk', {
                     method: 'POST',
@@ -503,8 +505,9 @@ export default function Meeting() {
 
         socket?.disconnect();
 
-        const currentRoomId = roomId;
-        const token = localStorage.getItem("loginToken");
+        nst currentRoomId = roomId;
+
+        const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
 
         clearMeetingStorage();
         navigate("/home", { replace: true });
