@@ -9,7 +9,7 @@ export const useParticipants = (roomId, socket) => {
         if (!roomId) return;
         try {
             const token = getLoginToken();
-            const res = await fetch(`http://13.203.104.113/meetings/${roomId}/participants`, {
+            const res = await fetch(`https://pranavdev.me//meetings/${roomId}/participants`, {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
