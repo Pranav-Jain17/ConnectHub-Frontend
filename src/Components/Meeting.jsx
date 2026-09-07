@@ -154,7 +154,7 @@ export default function Meeting() {
                 setIsRejoining(true);
 
                 const joinData = await apiRequest(
-                    `https://pranavdev.me//meetings/${roomId}/join`,
+                    `https://pranavdev.me/meetings/${roomId}/join`,
                     'POST',
                     { roomId }
                 );
@@ -200,7 +200,7 @@ export default function Meeting() {
             try {
                 const token = localStorage.getItem("loginToken");
                 const res = await fetch(
-                    `https://pranavdev.me//meetings/${roomId}/participants`,
+                    `https://pranavdev.me/meetings/${roomId}/participants`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 const data = await res.json();
@@ -217,7 +217,7 @@ export default function Meeting() {
         console.log("🏁 Calling /end...");
         const token = localStorage.getItem("loginToken");
         try {
-            const res = await fetch('https://pranavdev.me//meetings/end', {
+            const res = await fetch('https://pranavdev.me/meetings/end', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -290,7 +290,7 @@ export default function Meeting() {
 
             const token = localStorage.getItem("loginToken");
             try {
-                const res = await fetch('https://pranavdev.me//meetings/chunk', {
+                const res = await fetch('https://pranavdev.me/meetings/chunk', {
                     method: 'POST',
                     headers: { Authorization: `Bearer ${token}` },
                     body: formData,
@@ -511,7 +511,7 @@ export default function Meeting() {
 
         try {
             await fetch(
-                `https://pranavdev.me//meetings/${currentRoomId}/leave`,
+                `https://pranavdev.me/meetings/${currentRoomId}/leave`,
                 {
                     method: "POST",
                     headers: {

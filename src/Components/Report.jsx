@@ -32,7 +32,7 @@ export default function Report() {
                 throw new Error("Authentication token not found.");
             }
 
-            const res = await fetch(`https://pranavdev.me//meetings/${meetingId}/report`, {
+            const res = await fetch(`https://pranavdev.me/meetings/${meetingId}/report`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
@@ -152,7 +152,7 @@ export default function Report() {
     const handleDownloadPDF = async () => {
         try {
             const token = localStorage.getItem("loginToken");
-            const res = await fetch(`https://pranavdev.me//meetings/${meetingId}/report/download`, {
+            const res = await fetch(`https://pranavdev.me/meetings/${meetingId}/report/download`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                 },
