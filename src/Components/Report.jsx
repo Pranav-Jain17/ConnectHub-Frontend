@@ -29,7 +29,7 @@ export default function Report() {
 
 
             const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
-            if (!token) {
+            if (!loginToken) {
                 throw new Error("Authentication token not found.");
             }
 
@@ -155,7 +155,7 @@ export default function Report() {
             const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
             const res = await fetch(`https://pranavdev.me/meetings/${meetingId}/report/download`, {
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    Authorization: `Bearer ${loginToken}`,
                 },
             });
 
