@@ -18,7 +18,7 @@ export default function ChatPanel({ isOpen, onClose, socket, roomId, userId, use
 
         async function loadHistory() {
             try {
-                const token = localStorage.getItem("loginToken");
+                const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
                 const res = await fetch(`https://pranavdev.me/chat/${roomId}`, {
                     headers: {
                         "Authorization": `Bearer ${token}`,

@@ -34,7 +34,7 @@ export default function Meeting() {
 
     const localVideoRef = useRef(null);
     const mediaRecorderRef = useRef(null);
-    const chunkIntervalRef = useRef(null);       // ✅ chunk timer
+    const chunkIntervalRef = useRef(null);
     const isExitingRef = useRef(false);
     const nameMapRef = useRef({});
     const chatOpenRef = useRef(isChatOpen);
