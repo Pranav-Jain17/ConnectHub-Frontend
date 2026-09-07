@@ -505,7 +505,7 @@ export default function Meeting() {
 
         socket?.disconnect();
 
-        nst currentRoomId = roomId;
+        const currentRoomId = roomId;
 
         const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
 

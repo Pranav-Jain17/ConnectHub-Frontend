@@ -152,7 +152,7 @@ export default function Report() {
 
     const handleDownloadPDF = async () => {
         try {
-            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken"); const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
             const res = await fetch(`https://pranavdev.me/meetings/${meetingId}/report/download`, {
                 headers: {
                     Authorization: `Bearer ${token}`,
