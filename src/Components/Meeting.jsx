@@ -43,7 +43,7 @@ export default function Meeting() {
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
     const { participants, refetch: refetchParticipants } = useParticipants(roomId, socket);
-    const loginToken = localStorage.getItem("loginToken");
+    const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
 
     const apiRequest = async (url, method, body = null) => {
         const headers = {
