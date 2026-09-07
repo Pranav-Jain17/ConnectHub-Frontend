@@ -287,7 +287,7 @@ export default function Meeting() {
             const formData = new FormData();
             formData.append('audio', blob, `chunk-${index}.webm`);
             formData.append('meetingId', roomId);
-            formData.append('chunkIndex', String(iex));
+            formData.append('chunkIndex', String(index));
 
 
             const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
