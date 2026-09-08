@@ -5,6 +5,7 @@ import "./Styles/meeting.css";
 import { useSocket } from "../Hooks/useSocket";
 import { useWebRTC } from "../Hooks/useWebRTC";
 import { useParticipants } from "../Hooks/useParticipants";
+import { getLoginToken } from "../utils/auth";
 import ChatPanel from "./ChatPanel";
 import ParticipantsPanel from "./ParticipantsPanel";
 import VideoGrid from "./VideoGrid";
@@ -43,7 +44,7 @@ export default function Meeting() {
     const meetTitle = localStorage.getItem("meetTitle");
     const userName = localStorage.getItem("userName") || "You";
     const { participants, refetch: refetchParticipants } = useParticipants(roomId, socket);
-    const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+    const loginToken = getLoginToken();
 
     const apiRequest = async (url, method, body = null) => {
         const headers = {
@@ -198,10 +199,9 @@ export default function Meeting() {
         if (!roomId) return;
         const fetchHostInfo = async () => {
             try {
-                const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
                 const res = await fetch(
                     `https://pranavdev.me/meetings/${roomId}/participants`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    { headers: { Authorization: `Bearer ${loginToken}` } }
                 );
                 const data = await res.json();
                 if (data.hostUserId) setHostUserId(data.hostUserId);
@@ -216,7 +216,6 @@ export default function Meeting() {
     const finalizeMeetingEnd = useCallback(async () => {
         console.log("🏁 Caing /end...");
 
-        const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
         try {
             const res = await fetch('https://pranavdev.me/meetings/end', {
                 method: 'POST',
@@ -290,11 +289,10 @@ export default function Meeting() {
             formData.append('chunkIndex', String(index));
 
 
-            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
             try {
                 const res = await fetch('https://pranavdev.me/meetings/chunk', {
                     method: 'POST',
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { Authorization: `Bearer ${loginToken}` },
                     body: formData,
                 });
 
@@ -507,8 +505,6 @@ export default function Meeting() {
 
         const currentRoomId = roomId;
 
-        const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
-
         clearMeetingStorage();
         navigate("/home", { replace: true });
 
@@ -519,7 +515,7 @@ export default function Meeting() {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
+                        Authorization: `Bearer ${loginToken}`,
                     },
                 }
             );

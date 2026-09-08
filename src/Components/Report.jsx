@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useSocket } from "../Hooks/useSocket";
+import { getLoginToken } from "../utils/auth";
 import "./Styles/report.css";
 
 export default function Report() {
@@ -28,7 +29,7 @@ export default function Report() {
             setError(null);
 
 
-            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+            const loginToken = getLoginToken();
             if (!loginToken) {
                 throw new Error("Authentication token not found.");
             }
@@ -152,7 +153,7 @@ export default function Report() {
 
     const handleDownloadPDF = async () => {
         try {
-            const loginToken = localStorage.getItem("loginToken") || sessionStorage.getItem("loginToken");
+            const loginToken = getLoginToken();
             const res = await fetch(`https://pranavdev.me/meetings/${meetingId}/report/download`, {
                 headers: {
                     Authorization: `Bearer ${loginToken}`,
